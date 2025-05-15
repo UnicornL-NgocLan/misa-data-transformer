@@ -19,6 +19,8 @@ const whitelist = [
   'http://localhost:3000/',
   'http://localhost:3030/',
   'http://localhost:3030',
+  'http://103.161.22.196:3030/',
+  'http://103.161.22.196:3030',
 ]
 
 const isOriginAllowed = (origin) => {
