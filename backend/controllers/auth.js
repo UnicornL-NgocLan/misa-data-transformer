@@ -29,9 +29,9 @@ const userCtrl = {
         sign: true,
       })
 
-      const myUser = await Users.findOne({ username })
-        .select('username name companyIds role')
-        .populate('companyIds', 'name')
+      const myUser = await Users.findOne({ username }).select(
+        'username name companyIds role'
+      )
 
       res.status(200).json({ data: myUser })
     } catch (error) {
