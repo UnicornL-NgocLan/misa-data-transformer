@@ -277,7 +277,8 @@ const PaymentPlan = () => {
             )
 
             const newBankAccountId = bankAccounts.find(
-              (item) => item.accountNumber === bankAccountId
+              (item) =>
+                item.accountNumber.toString() === bankAccountId.toString()
             )
 
             if (
@@ -286,8 +287,8 @@ const PaymentPlan = () => {
               !companyId ||
               !type ||
               !value ||
-              (type === 'cash' && bankAccountId?.toString()?.trim()) ||
-              (type === 'bank' && !bankAccountId?.toString()?.trim())
+              (type === 'cash' && newBankAccountId?._id?.toString()?.trim()) ||
+              (type === 'bank' && !newBankAccountId?._id?.toString()?.trim())
             ) {
               fileInputRef.current.value = ''
               setIsProcessing(false)
@@ -301,14 +302,13 @@ const PaymentPlan = () => {
               type,
               value,
               name,
-              bankAccountId: newBankAccountId,
+              bankAccountId: newBankAccountId._id,
             }
 
             return _id
               ? app.patch(`/api/update-source/${_id}`, myData)
               : app.post('/api/create-source', myData)
           })
-
           await Promise.all(myMapList)
           await handleFetchSources()
           setIsProcessing(false)
