@@ -30,4 +30,4 @@ services:
       - web
       - server
     ports:
-      - 3033:3033
+      - 3030:3030

@@ -11,16 +11,14 @@ const hpp = require('hpp')
 const mongoose = require('mongoose')
 
 const uri = process.env.MONGO_URI
-const port = process.env.PORT || 5000
+const port = process.env.PORT || 5001
 const jwtSecret = process.env.JWT_SECRET
 
 const whitelist = [
   'http://localhost:3000',
   'http://localhost:3000/',
-  'http://localhost:3030/',
-  'http://localhost:3030',
-  'http://103.161.22.196:3033/',
-  'http://103.161.22.196:3033',
+  'http://103.161.22.196:3030/',
+  'http://103.161.22.196:3030',
 ]
 
 const isOriginAllowed = (origin) => {
