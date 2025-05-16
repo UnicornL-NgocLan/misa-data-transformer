@@ -567,6 +567,17 @@ const PaymentPlan = () => {
       ),
     },
     {
+      title: 'Link chứng từ kèm theo',
+      dataIndex: 'documentLink',
+      key: 'documentLink',
+      width: 200,
+      render: (value) => (
+        <a href={value} target="_blank">
+          {value}
+        </a>
+      ),
+    },
+    {
       title: 'Trạng thái',
       dataIndex: 'state',
       key: 'state',

@@ -19,6 +19,7 @@ const PaymentPlanSchema = mongoose.Schema(
     type: String,
     conversedValue: Number,
     state: { type: String, default: 'ongoing' },
+    documentLink: String,
   },
   { timestamps: true }
 )

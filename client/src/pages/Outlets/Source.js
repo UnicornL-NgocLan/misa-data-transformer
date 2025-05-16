@@ -302,7 +302,7 @@ const PaymentPlan = () => {
               type,
               value,
               name,
-              bankAccountId: newBankAccountId._id,
+              bankAccountId: newBankAccountId?._id,
             }
 
             return _id

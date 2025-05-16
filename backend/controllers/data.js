@@ -252,6 +252,7 @@ const dataCtrl = {
         note,
         conversedValue,
         type,
+        documentLink,
       } = req.body
       if (
         !subject.trim() ||
@@ -279,6 +280,7 @@ const dataCtrl = {
         conversedValue,
         note,
         type,
+        documentLink,
       })
 
       res.status(200).json({ msg: 'Đã tạo hoàn tất kế hoạch thanh toán' })

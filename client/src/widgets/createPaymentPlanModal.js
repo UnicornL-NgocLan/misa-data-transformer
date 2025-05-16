@@ -15,6 +15,15 @@ const PaymentPlanCreateModal = ({
   const [loading, setLoading] = useState(false)
   const { companies, auth } = useZustand()
 
+  function isValidUrl(string) {
+    try {
+      new URL(string)
+      return true
+    } catch (err) {
+      return false
+    }
+  }
+
   const handleOk = async () => {
     try {
       if (loading) return
@@ -32,6 +41,7 @@ const PaymentPlanCreateModal = ({
         state,
         note,
         type,
+        documentLink,
       } = form.getFieldsValue()
       if (
         !subject?.trim() ||
@@ -43,6 +53,10 @@ const PaymentPlanCreateModal = ({
         !type?.trim()
       )
         return alert('Vui lòng nhập đầy đủ thông tin')
+
+      if (documentLink && !isValidUrl(documentLink))
+        return alert('Vui lòng nhập đường link hợp lệ')
+
       setLoading(true)
       if (isModalOpen?._id) {
         await app.patch(`/api/update-payment-plan/${isModalOpen?._id}`, {
@@ -59,6 +73,7 @@ const PaymentPlanCreateModal = ({
           conversedValue,
           note,
           type,
+          documentLink,
         })
       } else {
         await app.post('/api/create-payment-plan', {
@@ -75,6 +90,7 @@ const PaymentPlanCreateModal = ({
           conversedValue,
           note,
           type,
+          documentLink,
         })
       }
       await handleFetchPaymentPlans()
@@ -111,6 +127,7 @@ const PaymentPlanCreateModal = ({
       form.setFieldValue('conversedValue', isModalOpen?.conversedValue)
       form.setFieldValue('note', isModalOpen?.note)
       form.setFieldValue('type', isModalOpen?.type)
+      form.setFieldValue('documentLink', isModalOpen?.documentLink)
     } else {
       form.setFieldValue('state', 'ongoing')
       form.setFieldValue('currency', 'vnd')
@@ -333,12 +350,7 @@ const PaymentPlanCreateModal = ({
           <Form.Item name="note" label="Ghi chú" style={{ flex: 3 }}>
             <Input className="w-full" placeholder="" />
           </Form.Item>
-          <Form.Item
-            style={{ flex: 1 }}
-            name="type"
-            label="Loại"
-            rules={[{ required: true, message: 'Hãy chọn loại!' }]}
-          >
+          <Form.Item style={{ flex: 2 }} name="type" label="Loại">
             <Select
               filterOption={(input, option) =>
                 (option?.label ?? '')
@@ -352,6 +364,13 @@ const PaymentPlanCreateModal = ({
                 { value: 'other', label: 'Khác' },
               ]}
             />
+          </Form.Item>
+          <Form.Item
+            name="documentLink"
+            label="Link chứng từ kèm theo"
+            style={{ flex: 2 }}
+          >
+            <Input className="w-full" placeholder="" />
           </Form.Item>
         </Space.Compact>
       </Form>
