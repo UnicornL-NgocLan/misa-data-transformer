@@ -286,8 +286,8 @@ const PaymentPlan = () => {
               !companyId ||
               !type ||
               !value ||
-              (type === 'cash' && bankAccountId?.trim()) ||
-              (type === 'bank' && !bankAccountId?.trim())
+              (type === 'cash' && bankAccountId?.toString()?.trim()) ||
+              (type === 'bank' && !bankAccountId?.toString()?.trim())
             ) {
               fileInputRef.current.value = ''
               setIsProcessing(false)
