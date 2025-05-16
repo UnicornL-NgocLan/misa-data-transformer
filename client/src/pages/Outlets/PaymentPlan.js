@@ -763,7 +763,7 @@ const PaymentPlan = () => {
                     {Intl.NumberFormat().format(totalConversedValue)}
                   </Text>
                 </Table.Summary.Cell>
-                {Array.from({ length: 4 }).map((_, i) => (
+                {Array.from({ length: 5 }).map((_, i) => (
                   <Table.Summary.Cell key={i}></Table.Summary.Cell>
                 ))}
               </Table.Summary.Row>
