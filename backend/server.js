@@ -21,6 +21,8 @@ const whitelist = [
   'http://localhost:3000',
   'http://103.161.22.196:3030/',
   'http://103.161.22.196:3030',
+  'https://sea-accounting.onrender.com',
+  'https://sea-accounting.onrender.com/',
 ]
 
 const isOriginAllowed = (origin) => {
