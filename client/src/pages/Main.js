@@ -14,6 +14,7 @@ import BankAccount from './Outlets/BankAccount'
 import Indenture from './Outlets/Indenture'
 import PaymentPlan from './Outlets/PaymentPlan'
 import Source from './Outlets/Source'
+import BQCKCalculator from './BQCKCalculator'
 
 const Main = () => {
   const { auth, setAuth } = useZustand()
@@ -69,6 +70,7 @@ const Main = () => {
           path="/misa-data-transformer"
           element={<MisaDataTransformer />}
         />
+        <Route path="/bqck-calculator" element={<BQCKCalculator />} />
       </Routes>
     </BrowserRouter>
   )

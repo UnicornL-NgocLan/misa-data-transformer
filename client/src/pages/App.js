@@ -18,6 +18,7 @@ import { BsPiggyBankFill } from 'react-icons/bs'
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons'
 import { FaMoneyBill1Wave } from 'react-icons/fa6'
 import MisaLogo from '../images/logo-misa.png'
+import CalculatorImg from '../images/calculator.png'
 const { Header, Content, Sider } = Layout
 
 const siderStyle = {
@@ -176,6 +177,10 @@ const App = () => {
     window.open('/misa-data-transformer', '_blank')
   }
 
+  const handleClickToBQCKCalculator = () => {
+    window.open('/bqck-calculator', '_blank')
+  }
+
   const items = [
     {
       label: 'Đổi mật khẩu',
@@ -247,11 +252,20 @@ const App = () => {
             <Button
               style={{ display: 'flex', alignItems: 'center' }}
               color="default"
-              variant="text"
+              variant="outlined"
               onClick={handleClickToMisaDataTransformer}
             >
               <span>Xuất file import vào MISA</span>
               <img src={MisaLogo} alt="" style={{ width: 20 }} />
+            </Button>
+            <Button
+              style={{ display: 'flex', alignItems: 'center' }}
+              color="default"
+              variant="outlined"
+              onClick={handleClickToBQCKCalculator}
+            >
+              <span>Tính giá xuất kho BQCK</span>
+              <img src={CalculatorImg} alt="" style={{ width: 15 }} />
             </Button>
           </Space>
           {isModalOpen && (
