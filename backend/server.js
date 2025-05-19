@@ -25,6 +25,8 @@ const whitelist = [
   'http://103.161.22.196:3010',
   'https://sea-accounting.onrender.com',
   'https://sea-accounting.onrender.com/',
+  'https://sea-accounting.seateklab.vn/',
+  'https://sea-accounting.seateklab.vn',
 ]
 
 const isOriginAllowed = (origin) => {
