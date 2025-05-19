@@ -33,7 +33,6 @@ const userCtrl = {
         maxAge: 1000 * 60 * 60 * 24,
         secure: process.env.NODE_ENV === 'production',
         sign: true,
-        sameSite: 'None',
       })
 
       res.status(200).json({ data: myUser })
