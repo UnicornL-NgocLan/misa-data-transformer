@@ -7,6 +7,8 @@ import excelLogo from '../images/excel.png'
 import { generateJacobiSystem } from '../utils/generateJacobiSystem'
 import enImg from '../images/en.png'
 import { validExcelFile } from '../globalVariables'
+import { solveJacobiSystemInWorker } from '../utils/jacobiWorker'
+import { Button } from 'antd'
 
 const BQCKCalculator = () => {
   const [dropState, setDropState] = useState(0)
@@ -36,17 +38,50 @@ const BQCKCalculator = () => {
       worker.postMessage(buffer)
 
       // Handle response from the worker
-      worker.onmessage = (e) => {
+      worker.onmessage = async (e) => {
         const { success, data, error } = e.data
 
         if (success) {
           const { tonDauKy, giaoDich } = data
           const systems = generateJacobiSystem(tonDauKy, giaoDich)
-          const finalResults = []
+          let finalResults = []
+
+          await Promise.all(
+            systems.map(async ({ product, equations, khoMap }) => {
+              const solution = await solveJacobiSystemInWorker(equations)
+              for (const [kho, idx] of Object.entries(khoMap)) {
+                finalResults.push({
+                  'sản phẩm': product,
+                  kho: kho,
+                  'đơn giá xuất kho': parseFloat(solution[idx].toFixed(8)),
+                })
+              }
+            })
+          )
+
+          const worker2 = new Worker(
+            new URL('../workers/exportToExcelFile.worker.js', import.meta.url)
+          )
+          worker2.postMessage({
+            data: finalResults,
+            fileName: 'Kết quả tính bình quân cuối kỳ',
+          })
+
+          worker2.onmessage = (e) => {
+            const { blob, fileName } = e.data
+            FileSaver.saveAs(blob, fileName)
+            worker2.terminate()
+            setIsProcessing(false)
+          }
+
+          worker2.onerror = (err) => {
+            console.error('Worker error:', err)
+            alert('Đã xảy ra lỗi trong quá trình xử lý file.')
+            worker2.terminate()
+          }
         } else {
           alert('Lỗi xử lý file: ' + error)
         }
-
         worker.terminate()
       }
 
@@ -58,13 +93,31 @@ const BQCKCalculator = () => {
       }
     } catch (error) {
       alert('Lỗi không xác định: ' + error.message)
+    } finally {
       setIsProcessing(false)
     }
+  }
+
+  const handleDownLoadFile = () => {
+    window.open(
+      'https://sdrive.seacorp.vn/f/387374c81db4457d9177/?dl=1',
+      '_blank'
+    )
   }
 
   return (
     <Wrapper>
       <div className="dropbox-container-wrapper">
+        <div style={{ marginTop: 24 }}>
+          <Button
+            variant="solid"
+            style={{ width: '100%' }}
+            disabled={isProcessing}
+            onClick={handleDownLoadFile}
+          >
+            Tải file template import BQCK
+          </Button>
+        </div>
         <div className="dropbox-area-wrapper">
           {isProcessing ? (
             <div className="loading">

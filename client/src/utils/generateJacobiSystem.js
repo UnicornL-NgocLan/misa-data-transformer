@@ -88,7 +88,6 @@ export function generateJacobiSystem(tonDauKy, giaoDich) {
         equations.push(eq)
       }
     }
-    console.log(equations, khoMap)
     productMap[product] = { equations, khoMap }
   }
 
