@@ -71,7 +71,7 @@ const Login = () => {
           style={{ fontSize: 14 }}
           rules={[{ required: true, message: 'Hãy nhập mật khẩu!' }]}
         >
-          <Input.Password />
+          <Input.Password autoComplete="" />
         </Form.Item>
 
         <Form.Item label={null} style={{ marginBottom: 15 }}>
