@@ -23,14 +23,17 @@ const userCtrl = {
         return res.status(400).json({ msg: 'Mật khẩu không hợp lệ' })
 
       const access_token = createAccessToken({ id: user._id })
-      res.cookie(process.env.COOKIE_NAME, access_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-      })
 
       const myUser = await Users.findOne({ username }).select(
         'username name companyIds role'
       )
+
+      res.cookie(process.env.COOKIE_NAME, access_token, {
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24,
+        secure: process.env.NODE_ENV === 'production',
+        sign: true,
+      })
 
       res.status(200).json({ data: myUser })
     } catch (error) {
