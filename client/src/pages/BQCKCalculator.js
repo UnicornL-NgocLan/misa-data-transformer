@@ -71,7 +71,6 @@ const BQCKCalculator = () => {
             const { blob, fileName } = e.data
             FileSaver.saveAs(blob, fileName)
             worker2.terminate()
-            setIsProcessing(false)
           }
 
           worker2.onerror = (err) => {
