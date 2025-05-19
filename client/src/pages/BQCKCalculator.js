@@ -9,6 +9,7 @@ import enImg from '../images/en.png'
 import { validExcelFile } from '../globalVariables'
 import { solveJacobiSystemInWorker } from '../utils/jacobiWorker'
 import { Button } from 'antd'
+import * as XLSX from 'xlsx'
 
 const BQCKCalculator = () => {
   const [dropState, setDropState] = useState(0)
@@ -59,40 +60,49 @@ const BQCKCalculator = () => {
             })
           )
 
-          const worker2 = new Worker(
-            new URL('../workers/exportToExcelFile.worker.js', import.meta.url)
-          )
-          worker2.postMessage({
-            data: finalResults,
-            fileName: 'Kết quả tính bình quân cuối kỳ',
+          const fileName = 'Kết quả BQCK theo kho'
+          const fileType =
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'
+          const fileExtension = '.xlsx'
+
+          const CHUNK_SIZE = 70000
+          let wb = { Sheets: {}, SheetNames: [] }
+          if (finalResults.length === 0) {
+            const ws = XLSX.utils.json_to_sheet(finalResults)
+            wb = { Sheets: { finalResults: ws }, SheetNames: ['data'] }
+          } else {
+            for (let i = 0; i < finalResults.length; i += CHUNK_SIZE) {
+              const chunk = finalResults.slice(i, i + CHUNK_SIZE)
+              const sheet = XLSX.utils.json_to_sheet(chunk)
+              const sheetName = `Sheet_${Math.floor(i / CHUNK_SIZE) + 1}`
+              wb.Sheets[sheetName] = sheet
+              wb.SheetNames.push(sheetName)
+            }
+          }
+
+          const excelBuffer = XLSX.write(wb, {
+            bookType: 'xlsx',
+            type: 'array',
           })
-
-          worker2.onmessage = (e) => {
-            const { blob, fileName } = e.data
-            FileSaver.saveAs(blob, fileName)
-            worker2.terminate()
-          }
-
-          worker2.onerror = (err) => {
-            console.error('Worker error:', err)
-            alert('Đã xảy ra lỗi trong quá trình xử lý file.')
-            worker2.terminate()
-          }
+          const blob = new Blob([excelBuffer], { type: fileType })
+          const finalFileName = fileName + fileExtension
+          FileSaver.saveAs(blob, finalFileName)
         } else {
           alert('Lỗi xử lý file: ' + error)
         }
         worker.terminate()
+        setIsProcessing(false)
       }
 
       // Handle worker errors
       worker.onerror = (err) => {
         console.error('Worker error:', err)
         alert('Đã xảy ra lỗi trong quá trình xử lý file.')
+        setIsProcessing(false)
         worker.terminate()
       }
     } catch (error) {
       alert('Lỗi không xác định: ' + error.message)
-    } finally {
       setIsProcessing(false)
     }
   }
