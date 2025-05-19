@@ -72,13 +72,14 @@ export function generateJacobiSystem(tonDauKy, giaoDich) {
       nhapNgoai.forEach((r) => (denominator += Number(r['số lượng'] || 0)))
       nhapTuKho.forEach((r) => (denominator += Number(r['số lượng'] || 0)))
 
-      // Normalize phương trình: chia cả 2 vế cho mẫu
+      // Chia cả 2 vế cho mẫu
       if (denominator === 0) {
         // Không thể xác định đơn giá (không có lượng)
         const eq = { coeffs: new Array(n).fill(0), constant: 0 }
         eq.coeffs[idx] = 1 // hệ số của kho đang xét = 1, các kho còn lại = 0
         equations.push(eq)
       } else {
+        // Khúc này phương trình đang có dạng a1 a2 a3 ... = constant => mình phải set là số âm để khi chuyển vế nó mới về số dương
         const eq = {
           coeffs: coeffs.map((c) => -c / denominator),
           constant: constant / denominator,
@@ -87,7 +88,7 @@ export function generateJacobiSystem(tonDauKy, giaoDich) {
         equations.push(eq)
       }
     }
-
+    console.log(equations, khoMap)
     productMap[product] = { equations, khoMap }
   }
 

@@ -5,7 +5,7 @@ const isTokenValid = (token) => jwt.verify(token, process.env.JWT_SECRET)
 
 const authenticate = async (req, res, next) => {
   try {
-    const cookies = req.signedCookies
+    const cookies = req.cookies
     const authCookie = cookies[process.env.COOKIE_NAME]
 
     if (!authCookie)
