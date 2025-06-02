@@ -18,8 +18,10 @@ const RightCreateModal = ({
     try {
       if (loading) return
       const { objectId, read, write, create, canDelete } = form.getFieldsValue()
-      if (!objectId?.trim()) return alert('Vui lòng nhập đầy đủ thông tin')
-      const currentObject = objects.find((i) => i._id === objectId)
+      if (!objectId) return alert('Vui lòng nhập đầy đủ thông tin')
+      const currentObject = objects.find(
+        (i) => i._id === objectId || i._id === objectId._id
+      )
       if (!currentObject) return alert('Đối tượng không tồn tại')
 
       if (isModalOpen?._id) {
@@ -61,7 +63,11 @@ const RightCreateModal = ({
       form.setFieldValue('write', isModalOpen?.write)
       form.setFieldValue('canDelete', isModalOpen?.canDelete)
       form.setFieldValue('create', isModalOpen?.create)
-      form.setFieldValue('objectId', isModalOpen?.objectId)
+      if (isModalOpen?.objectId?._id) {
+        form.setFieldValue('objectId', isModalOpen?.objectId._id)
+      } else {
+        form.setFieldValue('objectId', isModalOpen?.objectId)
+      }
     } else {
       form.setFieldValue('read', false)
       form.setFieldValue('write', false)

@@ -122,6 +122,43 @@ const dataCtrl = {
         { ...parameters },
         { new: true }
       )
+
+      const rightList = await Rights.find({ accessGroupId: id })
+      const removedItems = rightList.filter(
+        (item) => 
+          !parameters.rights.find(
+            (i) => i._id.toString() === item._id.toString()
+          )
+      )
+
+      for (const right of removedItems) {
+        await Rights.findOneAndDelete({ _id: right._id })
+      }
+
+      for (const right of parameters.rights) {
+        if (typeof right._id === 'string') {
+          await Rights.findOneAndUpdate(
+            { _id: right._id },
+            {
+              objectId: right.objectId,
+              read: right.read,
+              write: right.write,
+              canDelete: right.canDelete,
+              create: right.create,
+            }
+          )
+        } else {
+          await Rights.create({
+            objectId: right.objectId,
+            accessGroupId: id,
+            read: right.read,
+            write: right.write,
+            canDelete: right.canDelete,
+            create: right.create,
+          })
+        }
+      }
+
       if (!newOne)
         return res
           .status(400)

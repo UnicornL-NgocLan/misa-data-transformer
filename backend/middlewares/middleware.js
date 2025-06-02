@@ -1,7 +1,23 @@
 const jwt = require('jsonwebtoken')
 const Users = require('../models/user')
+const AccessGroups = require('../models/accessGroup')
 
 const isTokenValid = (token) => jwt.verify(token, process.env.JWT_SECRET)
+
+const isActionValid = (object, action, rights) => {
+  const respectiveRights = rights.filter(
+    (i) => i.objectId.name.toString() === object.toString()
+  )
+
+  let isValid = true
+  for (let i = 0; i < action.length; i++) {
+    isValid = respectiveRights.some((item) => item[action[i]])
+    if (!isValid) {
+      break
+    }
+  }
+  return isValid
+}
 
 const authenticate = async (req, res, next) => {
   try {
@@ -28,4 +44,28 @@ const authenticate = async (req, res, next) => {
   }
 }
 
-module.exports = { authenticate }
+const checkRights = (object, action) => {
+  return async function (req, res, next) {
+    try {
+      if (req.user.role === 'admin') {
+        next()
+      }
+      const belongingGroup = await AccessGroups.find({ userIds: req.user._id })
+      const relatedRights = await Rights.find({
+        accessGroupId: { $in: belongingGroup.map((i) => i._id) },
+      }).select('objectId', 'name')
+
+      let isValid = isActionValid(object, action, relatedRights)
+      if (!isValid)
+        return res
+          .status(403)
+          .json({ msg: 'Bạn không có quyền để thực hiện hành động này' })
+
+      next()
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  }
+}
+
+module.exports = { authenticate, checkRights }

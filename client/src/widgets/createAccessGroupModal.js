@@ -8,7 +8,7 @@ import { FiPlus } from 'react-icons/fi'
 import { MdEdit } from 'react-icons/md'
 import { MdDelete } from 'react-icons/md'
 import { useZustand } from '../zustand'
-import { sysmtemUserRole } from '../globalVariables'
+import { objectMapping, sysmtemUserRole } from '../globalVariables'
 import lodash from 'lodash'
 
 const AccessGroupCreateModal = ({
@@ -77,6 +77,7 @@ const AccessGroupCreateModal = ({
   useEffect(() => {
     if (isModalOpen?._id) {
       form.setFieldValue('name', isModalOpen?.name)
+      form.setFieldValue('description', isModalOpen?.description)
       form.setFieldValue('companyIds', isModalOpen?.companyIds)
       form.setFieldValue('userIds', isModalOpen?.userIds)
       const respectiveRights = currentRights.filter(
@@ -228,7 +229,9 @@ const AccessGroupCreateModal = ({
             dataSource={rights.map((i) => {
               return {
                 ...i,
-                object: i.object || i.objectId?.name,
+                object:
+                  i.object ||
+                  (i.objectId?.name ? objectMapping[i.objectId?.name] : ''),
               }
             })}
             bordered
