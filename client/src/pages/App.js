@@ -18,6 +18,7 @@ import { BsPiggyBankFill } from 'react-icons/bs'
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons'
 import { FaMoneyBill1Wave } from 'react-icons/fa6'
 import MisaLogo from '../images/logo-misa.png'
+import { IoSettings } from 'react-icons/io5'
 import CalculatorImg from '../images/calculator.png'
 const { Header, Content, Sider } = Layout
 
@@ -42,6 +43,9 @@ const App = () => {
     setIndentureState,
     setPaymentPlanState,
     setSourceState,
+    setObjectsState,
+    setRightsState,
+    setAccessGroupState,
   } = useZustand()
   const [loading, setLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -122,6 +126,15 @@ const App = () => {
         handleNavigate('/source', 7)
       },
     },
+    {
+      key: 8,
+      icon: <IoSettings />,
+      label: 'Cài đặt',
+      disabled: auth?.role === 'basic',
+      onClick: () => {
+        handleNavigate('/setting', 8)
+      },
+    },
   ]
 
   const showModal = () => {
@@ -157,6 +170,9 @@ const App = () => {
         app.get('/api/get-indentures'),
         app.get('/api/get-payment-plans'),
         app.get('/api/get-sources'),
+        app.get('/api/get-objects'),
+        app.get('/api/get-rights'),
+        app.get('/api/get-access-groups'),
       ])
 
       setUserState(result[0]?.data?.data)
@@ -166,6 +182,9 @@ const App = () => {
       setIndentureState(result[4]?.data?.data)
       setPaymentPlanState(result[5]?.data?.data)
       setSourceState(result[6]?.data?.data)
+      setObjectsState(result[7]?.data?.data)
+      setRightsState(result[8]?.data?.data)
+      setAccessGroupState(result[9]?.data?.data)
     } catch (error) {
       alert(error?.response?.data?.msg || error)
     } finally {
@@ -215,7 +234,6 @@ const App = () => {
         trigger={null}
         collapsed={!collapsed}
       >
-        <div className="demo-logo-vertical" />
         <Menu
           theme="dark"
           mode="inline"

@@ -196,3 +196,14 @@ export const sysmtemUserRole = {
   manager: 'manager',
   admin: 'admin',
 }
+
+export const objectMapping = {
+  bank: 'Ngân hàng',
+  bankAccount: 'Số tài khoản',
+  indenture: 'Khế ước ngân hàng',
+  paymentPlan: 'Kế hoạch thanh toán',
+  source: 'Nguồn',
+  user: 'Người dùng',
+  company: 'Công ty',
+  accessGroup: 'Nhóm quyền',
+}

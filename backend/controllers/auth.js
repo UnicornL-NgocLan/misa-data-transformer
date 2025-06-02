@@ -48,10 +48,6 @@ const userCtrl = {
         return res
           .status(400)
           .json({ msg: 'Vui lòng cung cấp đầy đủ thông tin' })
-      if (req.user.role !== 'manager' || req.user.role !== 'admin')
-        return res
-          .status(401)
-          .json({ msg: 'Bạn không đủ thẩm quyền để tạo người dùng' })
       const existingUser = await Users.findOne({ username })
       if (existingUser)
         return res.status(400).json({ msg: 'Tài khoản đã tồn tại' })
