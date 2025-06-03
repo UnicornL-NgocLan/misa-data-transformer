@@ -14,11 +14,12 @@ import { FaFileExport } from 'react-icons/fa'
 import * as FileSaver from 'file-saver'
 import { FaUpload } from 'react-icons/fa'
 import { sysmtemUserRole, validExcelFile } from '../../globalVariables'
+import useCheckRights from '../../utils/checkRights'
 import _ from 'lodash'
 
 const { Text } = Typography
 
-const PaymentPlan = () => {
+const Source = () => {
   const [sources, setSources] = useState([])
   const {
     sources: currentSources,
@@ -34,6 +35,7 @@ const PaymentPlan = () => {
   const [loading, setLoading] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const fileInputRef = useRef(null)
+  const checkRights = useCheckRights()
 
   const showModal = (user) => {
     setIsModalOpen(user)
@@ -431,12 +433,13 @@ const PaymentPlan = () => {
       align: 'center',
       key: 'action',
       width: 100,
+      hidden:
+        !checkRights('source', ['write']) &&
+        !checkRights('source', ['canDelete']),
       fixed: 'right',
-      render: (_) =>
-        auth.role === sysmtemUserRole.basic ? (
-          <></>
-        ) : (
-          <Space size="middle">
+      render: (_) => (
+        <Space size="middle">
+          {checkRights('source', ['write']) && (
             <Tooltip title="Chỉnh sửa">
               <Button
                 color="default"
@@ -446,6 +449,8 @@ const PaymentPlan = () => {
                 onClick={() => showModal(_)}
               ></Button>
             </Tooltip>
+          )}
+          {checkRights('source', ['canDelete']) && (
             <Tooltip title="Xóa">
               <Button
                 color="danger"
@@ -455,8 +460,9 @@ const PaymentPlan = () => {
                 onClick={() => handleDeleteRecord(_)}
               ></Button>
             </Tooltip>
-          </Space>
-        ),
+          )}
+        </Space>
+      ),
     },
   ]
 
@@ -467,15 +473,17 @@ const PaymentPlan = () => {
   return (
     <>
       <Space.Compact>
-        <Button
-          color="primary"
-          onClick={() => showModal(true)}
-          variant="filled"
-          style={{ marginBottom: 16 }}
-          icon={<FiPlus />}
-        >
-          Tạo
-        </Button>
+        {checkRights('source', ['create']) && (
+          <Button
+            color="primary"
+            onClick={() => showModal(true)}
+            variant="filled"
+            style={{ marginBottom: 16 }}
+            icon={<FiPlus />}
+          >
+            Tạo
+          </Button>
+        )}
         <Button
           color="primary"
           disabled={isProcessing}
@@ -485,38 +493,41 @@ const PaymentPlan = () => {
         >
           Export
         </Button>
-        {auth.role === sysmtemUserRole.basic ? (
-          <></>
-        ) : (
-          <div>
-            <input
-              type="file"
-              ref={fileInputRef}
-              style={{ display: 'none' }}
-              onChange={handleAddFile}
-            />
-            <Button
-              icon={<FaUpload />}
-              color="primary"
-              disabled={isProcessing}
-              onClick={() => {
-                fileInputRef.current.click()
-              }}
-            >
-              Upload
-            </Button>
-          </div>
-        )}
+        {checkRights('source', ['write']) ||
+          (checkRights('source', ['create']) && (
+            <div>
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleAddFile}
+              />
+              <Button
+                icon={<FaUpload />}
+                color="primary"
+                disabled={isProcessing}
+                onClick={() => {
+                  fileInputRef.current.click()
+                }}
+              >
+                Upload
+              </Button>
+            </div>
+          ))}
       </Space.Compact>
       <Table
         columns={columns}
-        dataSource={sources.map((i) => {
-          return {
-            ...i,
-            company: i?.companyId?.name,
-            personUpdating: i?.updatedBy?.name,
-          }
-        })}
+        dataSource={
+          checkRights('source', ['read'])
+            ? sources.map((i) => {
+                return {
+                  ...i,
+                  company: i?.companyId?.name,
+                  personUpdating: i?.updatedBy?.name,
+                }
+              })
+            : []
+        }
         bordered
         size="small"
         rowKey={(record) => record._id}
@@ -574,4 +585,4 @@ const PaymentPlan = () => {
     </>
   )
 }
-export default PaymentPlan
+export default Source

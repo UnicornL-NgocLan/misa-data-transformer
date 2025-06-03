@@ -7,6 +7,7 @@ import { Input } from 'antd'
 import Highlighter from 'react-highlight-words'
 import { SearchOutlined } from '@ant-design/icons'
 import app from '../../axiosConfig'
+import useCheckRights from '../../utils/checkRights'
 
 const Bank = () => {
   const [banks, setBanks] = useState([])
@@ -16,6 +17,7 @@ const Bank = () => {
   const [searchedColumn, setSearchedColumn] = useState('')
   const searchInput = useRef(null)
   const [loading, setLoading] = useState(false)
+  const checkRights = useCheckRights()
 
   const showModal = (user) => {
     setIsModalOpen(user)
@@ -201,6 +203,7 @@ const Bank = () => {
       align: 'center',
       key: 'action',
       width: 150,
+      hidden: !checkRights('bank', ['write']),
       render: (_) => (
         <Space size="middle">
           <Button
@@ -240,18 +243,20 @@ const Bank = () => {
   }, [])
   return (
     <>
-      <Button
-        color="primary"
-        onClick={() => showModal(true)}
-        variant="filled"
-        style={{ marginBottom: 16 }}
-        icon={<FiPlus />}
-      >
-        Tạo
-      </Button>
+      {checkRights('bank', ['create']) && (
+        <Button
+          color="primary"
+          onClick={() => showModal(true)}
+          variant="filled"
+          style={{ marginBottom: 16 }}
+          icon={<FiPlus />}
+        >
+          Tạo
+        </Button>
+      )}
       <Table
         columns={columns}
-        dataSource={banks}
+        dataSource={checkRights('bank', ['read']) ? banks : []}
         bordered
         size="small"
         rowKey={(record) => record._id}

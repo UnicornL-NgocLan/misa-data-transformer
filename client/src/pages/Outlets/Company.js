@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Table, Tag } from 'antd'
 import { useZustand } from '../../zustand'
+import useCheckRights from '../../utils/checkRights'
 
 const Company = () => {
   const [companies, setCompanies] = useState([])
+  const checkRights = useCheckRights()
   const { companies: currentCompanies } = useZustand()
   const columns = [
     {
@@ -42,7 +44,7 @@ const Company = () => {
   return (
     <Table
       columns={columns}
-      dataSource={companies}
+      dataSource={checkRights('company', ['read']) ? companies : []}
       bordered
       size="small"
       rowKey={(record) => record._id}

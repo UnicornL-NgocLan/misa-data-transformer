@@ -79,7 +79,6 @@ const dataCtrl = {
       const group = await AccessGroups.create({
         name,
         description,
-        companyIds,
         userIds,
       })
       for (const right of rights) {
@@ -125,7 +124,7 @@ const dataCtrl = {
 
       const rightList = await Rights.find({ accessGroupId: id })
       const removedItems = rightList.filter(
-        (item) => 
+        (item) =>
           !parameters.rights.find(
             (i) => i._id.toString() === item._id.toString()
           )

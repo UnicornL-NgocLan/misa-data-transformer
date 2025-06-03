@@ -25,7 +25,7 @@ const CreateUserModal = ({
         !name?.trim() ||
         !username?.trim() ||
         !password?.trim() ||
-        companyIds.length === 0
+        companyIds?.length === 0
       )
         return alert('Vui lòng nhập đầy đủ thông tin')
       await app.post('/api/create-user', {

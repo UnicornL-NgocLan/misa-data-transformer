@@ -20,6 +20,7 @@ import { FaMoneyBill1Wave } from 'react-icons/fa6'
 import MisaLogo from '../images/logo-misa.png'
 import { IoSettings } from 'react-icons/io5'
 import CalculatorImg from '../images/calculator.png'
+import useCheckRights from '../utils/checkRights'
 const { Header, Content, Sider } = Layout
 
 const siderStyle = {
@@ -53,6 +54,7 @@ const App = () => {
   const [sidebarIndex, setSidebarIndex] = useState('1')
   const [collapsed, setCollapsed] = useState(false)
   const navigate = useNavigate()
+  const checkRights = useCheckRights()
 
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -74,6 +76,7 @@ const App = () => {
       key: 1,
       icon: <FaRegUser />,
       label: 'Người dùng',
+      disabled: !checkRights('user', ['read']),
       onClick: () => {
         handleNavigate('/user', 1)
       },
@@ -82,6 +85,7 @@ const App = () => {
       key: 2,
       icon: <FaRegBuilding />,
       label: 'Công ty',
+      disabled: !checkRights('company', ['read']),
       onClick: () => {
         handleNavigate('/company', 2)
       },
@@ -90,6 +94,7 @@ const App = () => {
       key: 3,
       icon: <BsBank2 />,
       label: 'Ngân hàng',
+      disabled: !checkRights('bank', ['read']),
       onClick: () => {
         handleNavigate('/bank', 3)
       },
@@ -98,6 +103,7 @@ const App = () => {
       key: 4,
       icon: <RiBankCardFill />,
       label: 'Số tài khoản',
+      disabled: !checkRights('bankAccount', ['read']),
       onClick: () => {
         handleNavigate('/bank-account', 4)
       },
@@ -106,6 +112,7 @@ const App = () => {
       key: 5,
       icon: <IoDocument />,
       label: 'Khế ước ngân hàng',
+      disabled: !checkRights('indenture', ['read']),
       onClick: () => {
         handleNavigate('/indenture', 5)
       },
@@ -114,6 +121,7 @@ const App = () => {
       key: 6,
       icon: <BsPiggyBankFill />,
       label: 'Kế hoạch thanh toán',
+      disabled: !checkRights('paymentPlan', ['read']),
       onClick: () => {
         handleNavigate('/payment-plan', 6)
       },
@@ -122,6 +130,7 @@ const App = () => {
       key: 7,
       icon: <FaMoneyBill1Wave />,
       label: 'Nguồn',
+      disabled: !checkRights('source', ['read']),
       onClick: () => {
         handleNavigate('/source', 7)
       },
@@ -129,8 +138,8 @@ const App = () => {
     {
       key: 8,
       icon: <IoSettings />,
-      label: 'Cài đặt',
-      disabled: auth?.role === 'basic',
+      label: 'Cài đặt quyền',
+      disabled: !checkRights('accessGroup', ['read']),
       onClick: () => {
         handleNavigate('/setting', 8)
       },

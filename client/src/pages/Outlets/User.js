@@ -2,13 +2,14 @@ import { useState, useEffect, useRef } from 'react'
 import { Space, Table, Tag } from 'antd'
 import { Button, Input } from 'antd'
 import Highlighter from 'react-highlight-words'
-import { SearchOutlined, UserAddOutlined } from '@ant-design/icons'
+import { SearchOutlined } from '@ant-design/icons'
 import app from '../../axiosConfig'
 import { useZustand } from '../../zustand'
 import UpdateRoleModal from '../../widgets/updateRoleModal'
 import { sysmtemUserRole } from '../../globalVariables'
 import CreateUserModal from '../../widgets/createUserModal'
 import { FiPlus } from 'react-icons/fi'
+import useCheckRights from '../../utils/checkRights'
 
 const User = () => {
   const { auth } = useZustand()
@@ -20,6 +21,7 @@ const User = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isModalCreateUserOpen, setIsModalCreateUserOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const checkRights = useCheckRights()
 
   const handleSetActiveUser = async (user, activeState) => {
     try {
@@ -248,43 +250,39 @@ const User = () => {
       title: 'Hành động',
       align: 'center',
       width: 150,
-      hidden: auth.role === 'basic',
+      hidden: !checkRights('user', ['write']),
       key: 'action',
-      render: (_) =>
-        _.role === sysmtemUserRole.admin &&
-        auth.role !== sysmtemUserRole.admin ? (
-          <></>
-        ) : (
-          <Space size="middle">
+      render: (_) => (
+        <Space size="middle">
+          <Button
+            color="default"
+            variant="outlined"
+            size="small"
+            onClick={() => showModal(_)}
+          >
+            Chỉnh quyền
+          </Button>
+          {_.active ? (
             <Button
-              color="default"
-              variant="outlined"
+              color="danger"
+              variant="filled"
               size="small"
-              onClick={() => showModal(_)}
+              onClick={() => handleSetActiveUser(_, false)}
             >
-              Chỉnh quyền
+              Vô hiệu
             </Button>
-            {_.active ? (
-              <Button
-                color="danger"
-                variant="filled"
-                size="small"
-                onClick={() => handleSetActiveUser(_, false)}
-              >
-                Vô hiệu
-              </Button>
-            ) : (
-              <Button
-                color="primary"
-                variant="filled"
-                size="small"
-                onClick={() => handleSetActiveUser(_, true)}
-              >
-                Kích hoạt
-              </Button>
-            )}
-          </Space>
-        ),
+          ) : (
+            <Button
+              color="primary"
+              variant="filled"
+              size="small"
+              onClick={() => handleSetActiveUser(_, true)}
+            >
+              Kích hoạt
+            </Button>
+          )}
+        </Space>
+      ),
     },
   ]
 
@@ -306,7 +304,7 @@ const User = () => {
   }, [])
   return (
     <>
-      {['manager', 'admin'].some((i) => i === auth?.role) && (
+      {checkRights('user', ['create']) && (
         <Button
           color="primary"
           onClick={() => setIsModalCreateUserOpen(true)}
@@ -319,7 +317,7 @@ const User = () => {
       )}
       <Table
         columns={columns}
-        dataSource={users}
+        dataSource={checkRights('user', ['read']) ? users : []}
         size="small"
         rowKey={(record) => record._id}
         pagination={{
@@ -334,7 +332,7 @@ const User = () => {
           ),
         }}
       />
-      {isModalOpen && (
+      {isModalOpen && checkRights('user', ['write']) && (
         <UpdateRoleModal
           handleCancel={handleCancel}
           isModalOpen={isModalOpen}
@@ -342,7 +340,7 @@ const User = () => {
           loading={loading}
         />
       )}
-      {isModalCreateUserOpen && (
+      {isModalCreateUserOpen && checkRights('user', ['create']) && (
         <CreateUserModal
           handleCancel={() => setIsModalCreateUserOpen(false)}
           isModalOpen={isModalCreateUserOpen}

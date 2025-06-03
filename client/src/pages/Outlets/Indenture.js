@@ -10,6 +10,7 @@ import app from '../../axiosConfig'
 import moment from 'moment'
 import { MdEdit } from 'react-icons/md'
 import { sysmtemUserRole } from '../../globalVariables'
+import useCheckRights from '../../utils/checkRights'
 
 const Indenture = () => {
   const [indentures, setIndentures] = useState([])
@@ -22,6 +23,7 @@ const Indenture = () => {
   const [searchText, setSearchText] = useState('')
   const [searchedColumn, setSearchedColumn] = useState('')
   const searchInput = useRef(null)
+  const checkRights = useCheckRights()
 
   const showModal = (user) => {
     setIsModalOpen(user)
@@ -270,23 +272,21 @@ const Indenture = () => {
       align: 'center',
       key: 'action',
       fixed: 'right',
+      hidden: !checkRights('indenture', ['write']),
       width: 100,
-      render: (_) =>
-        _.state === 'done' && auth.role === sysmtemUserRole.basic ? (
-          <></>
-        ) : (
-          <Space size="middle">
-            <Tooltip title="Chỉnh sửa">
-              <Button
-                color="default"
-                variant="outlined"
-                size="small"
-                icon={<MdEdit />}
-                onClick={() => showModal(_)}
-              ></Button>
-            </Tooltip>
-          </Space>
-        ),
+      render: (_) => (
+        <Space size="middle">
+          <Tooltip title="Chỉnh sửa">
+            <Button
+              color="default"
+              variant="outlined"
+              size="small"
+              icon={<MdEdit />}
+              onClick={() => showModal(_)}
+            ></Button>
+          </Tooltip>
+        </Space>
+      ),
     },
   ]
 
@@ -296,20 +296,30 @@ const Indenture = () => {
 
   return (
     <>
-      <Button
-        color="primary"
-        onClick={() => showModal(true)}
-        variant="filled"
-        style={{ marginBottom: 16 }}
-        icon={<FiPlus />}
-      >
-        Tạo
-      </Button>
+      {checkRights('indenture', ['create']) && (
+        <Button
+          color="primary"
+          onClick={() => showModal(true)}
+          variant="filled"
+          style={{ marginBottom: 16 }}
+          icon={<FiPlus />}
+        >
+          Tạo
+        </Button>
+      )}
       <Table
         columns={columns}
-        dataSource={[...indentures].map((i) => {
-          return { ...i, bank: i.bankId?.name, company: i.companyId?.name }
-        })}
+        dataSource={
+          checkRights('indenture', ['read'])
+            ? [...indentures].map((i) => {
+                return {
+                  ...i,
+                  bank: i.bankId?.name,
+                  company: i.companyId?.name,
+                }
+              })
+            : []
+        }
         bordered
         size="small"
         rowKey={(record) => record._id}

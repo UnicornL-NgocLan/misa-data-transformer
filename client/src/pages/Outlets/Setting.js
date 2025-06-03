@@ -9,6 +9,7 @@ import app from '../../axiosConfig'
 import { MdEdit } from 'react-icons/md'
 import { MdDelete } from 'react-icons/md'
 import AccessGroupCreateModal from '../../widgets/createAccessGroupModal'
+import useCheckRights from '../../utils/checkRights'
 
 const Setting = () => {
   const [accessGroups, setAccessGroups] = useState([])
@@ -22,6 +23,7 @@ const Setting = () => {
   const [searchedColumn, setSearchedColumn] = useState('')
   const searchInput = useRef(null)
   const [loading, setLoading] = useState(false)
+  const checkRights = useCheckRights()
 
   const showModal = (user) => {
     setIsModalOpen(user)
@@ -194,26 +196,33 @@ const Setting = () => {
       key: 'action',
       width: 100,
       fixed: 'right',
+      hidden:
+        !checkRights('accessGroup', ['read']) &&
+        !checkRights('accessGroup', ['canDelete']),
       render: (_) => (
         <Space size="middle">
-          <Tooltip title="Chỉnh sửa">
-            <Button
-              color="default"
-              variant="outlined"
-              size="small"
-              icon={<MdEdit />}
-              onClick={() => showModal(_)}
-            ></Button>
-          </Tooltip>
-          <Tooltip title="Xóa">
-            <Button
-              color="danger"
-              size="small"
-              variant="filled"
-              icon={<MdDelete />}
-              onClick={() => handleDeleteRecord(_)}
-            ></Button>
-          </Tooltip>
+          {checkRights('accessGroup', ['read']) && (
+            <Tooltip title="Chỉnh sửa">
+              <Button
+                color="default"
+                variant="outlined"
+                size="small"
+                icon={<MdEdit />}
+                onClick={() => showModal(_)}
+              ></Button>
+            </Tooltip>
+          )}
+          {checkRights('accessGroup', ['canDelete']) && (
+            <Tooltip title="Xóa">
+              <Button
+                color="danger"
+                size="small"
+                variant="filled"
+                icon={<MdDelete />}
+                onClick={() => handleDeleteRecord(_)}
+              ></Button>
+            </Tooltip>
+          )}
         </Space>
       ),
     },
@@ -226,23 +235,29 @@ const Setting = () => {
   return (
     <>
       <Space.Compact>
-        <Button
-          color="primary"
-          onClick={() => showModal(true)}
-          variant="filled"
-          style={{ marginBottom: 16 }}
-          icon={<FiPlus />}
-        >
-          Tạo
-        </Button>
+        {checkRights('accessGroup', ['create']) && (
+          <Button
+            color="primary"
+            onClick={() => showModal(true)}
+            variant="filled"
+            style={{ marginBottom: 16 }}
+            icon={<FiPlus />}
+          >
+            Tạo
+          </Button>
+        )}
       </Space.Compact>
       <Table
         columns={columns}
-        dataSource={accessGroups.map((i) => {
-          return {
-            ...i,
-          }
-        })}
+        dataSource={
+          checkRights('accessGroup', ['read'])
+            ? accessGroups.map((i) => {
+                return {
+                  ...i,
+                }
+              })
+            : []
+        }
         bordered
         size="small"
         rowKey={(record) => record._id}

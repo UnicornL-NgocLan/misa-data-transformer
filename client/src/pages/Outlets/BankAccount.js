@@ -9,6 +9,7 @@ import { SearchOutlined } from '@ant-design/icons'
 import app from '../../axiosConfig'
 import { sysmtemUserRole } from '../../globalVariables'
 import BankAccountCreateModal from '../../widgets/createBankAccountModal'
+import useCheckRights from '../../utils/checkRights'
 
 const BankAccount = () => {
   const [bankAccs, setBankAccs] = useState([])
@@ -18,6 +19,7 @@ const BankAccount = () => {
   const [searchedColumn, setSearchedColumn] = useState('')
   const searchInput = useRef(null)
   const [loading, setLoading] = useState(false)
+  const checkRights = useCheckRights()
 
   const showModal = (user) => {
     setIsModalOpen(user)
@@ -244,6 +246,7 @@ const BankAccount = () => {
       align: 'center',
       key: 'action',
       width: 150,
+      hidden: !checkRights('bankAccount', ['write']),
       render: (_) => (
         <Space size="middle">
           <Button
@@ -254,29 +257,27 @@ const BankAccount = () => {
           >
             Chỉnh sửa
           </Button>
-          {auth.role !== sysmtemUserRole.basic && (
-            <div>
-              {_.active ? (
-                <Button
-                  color="danger"
-                  variant="filled"
-                  size="small"
-                  onClick={() => handleChangeActiveState(false, _._id)}
-                >
-                  Vô hiệu
-                </Button>
-              ) : (
-                <Button
-                  color="primary"
-                  variant="filled"
-                  size="small"
-                  onClick={() => handleChangeActiveState(true, _._id)}
-                >
-                  Kích hoạt
-                </Button>
-              )}
-            </div>
-          )}
+          <div>
+            {_.active ? (
+              <Button
+                color="danger"
+                variant="filled"
+                size="small"
+                onClick={() => handleChangeActiveState(false, _._id)}
+              >
+                Vô hiệu
+              </Button>
+            ) : (
+              <Button
+                color="primary"
+                variant="filled"
+                size="small"
+                onClick={() => handleChangeActiveState(true, _._id)}
+              >
+                Kích hoạt
+              </Button>
+            )}
+          </div>
         </Space>
       ),
     },
@@ -287,26 +288,32 @@ const BankAccount = () => {
   }, [])
   return (
     <>
-      <Button
-        color="primary"
-        onClick={() => showModal(true)}
-        variant="filled"
-        style={{ marginBottom: 16 }}
-        icon={<FiPlus />}
-      >
-        Tạo
-      </Button>
+      {checkRights('bankAccount', ['create']) && (
+        <Button
+          color="primary"
+          onClick={() => showModal(true)}
+          variant="filled"
+          style={{ marginBottom: 16 }}
+          icon={<FiPlus />}
+        >
+          Tạo
+        </Button>
+      )}
       <Table
         columns={columns}
-        dataSource={bankAccs.map((i) => {
-          return {
-            ...i,
-            companyId: i?.companyId?._id,
-            bankId: i?.bankId?._id,
-            company: i?.companyId?.name,
-            bank: i?.bankId?.name,
-          }
-        })}
+        dataSource={
+          checkRights('bankAccount', ['read'])
+            ? bankAccs.map((i) => {
+                return {
+                  ...i,
+                  companyId: i?.companyId?._id,
+                  bankId: i?.bankId?._id,
+                  company: i?.companyId?.name,
+                  bank: i?.bankId?.name,
+                }
+              })
+            : []
+        }
         size="small"
         rowKey={(record) => record._id}
         pagination={{

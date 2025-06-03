@@ -19,6 +19,7 @@ import { FaCheck } from 'react-icons/fa'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 import isBetween from 'dayjs/plugin/isBetween'
+import useCheckRights from '../../utils/checkRights'
 const { RangePicker } = DatePicker
 dayjs.extend(customParseFormat)
 dayjs.extend(isBetween)
@@ -40,6 +41,7 @@ const PaymentPlan = () => {
   const fileInputRef = useRef(null)
   const [filteredData, setFilteredData] = useState([])
   const [isFilteredDate, setIsFilteredDate] = useState(false)
+  const checkRights = useCheckRights()
 
   const { Text } = Typography
 
@@ -606,13 +608,14 @@ const PaymentPlan = () => {
       title: 'Hành động',
       align: 'center',
       key: 'action',
+      hidden:
+        !checkRights('paymentPlan', ['write']) &&
+        !checkRights('paymentPlan', ['canDelete']),
       width: 100,
       fixed: 'right',
-      render: (_) =>
-        auth.role === sysmtemUserRole.basic ? (
-          <></>
-        ) : (
-          <Space size="small">
+      render: (_) => (
+        <Space size="small">
+          {checkRights('paymentPlan', ['write']) && (
             <Tooltip title="Chỉnh sửa">
               <Button
                 color="default"
@@ -622,17 +625,19 @@ const PaymentPlan = () => {
                 onClick={() => showModal(_)}
               ></Button>
             </Tooltip>
-            {_.state !== 'done' && (
-              <Tooltip title="Đánh dấu hoàn tất">
-                <Button
-                  color="green"
-                  variant="outlined"
-                  size="small"
-                  icon={<FaCheck />}
-                  onClick={() => handleCheckDone(_)}
-                ></Button>
-              </Tooltip>
-            )}
+          )}
+          {_.state !== 'done' && checkRights('paymentPlan', ['write']) && (
+            <Tooltip title="Đánh dấu hoàn tất">
+              <Button
+                color="green"
+                variant="outlined"
+                size="small"
+                icon={<FaCheck />}
+                onClick={() => handleCheckDone(_)}
+              ></Button>
+            </Tooltip>
+          )}
+          {checkRights('paymentPlan', ['canDelete']) && (
             <Tooltip title="Xóa">
               <Button
                 color="danger"
@@ -642,8 +647,9 @@ const PaymentPlan = () => {
                 onClick={() => handleDeleteRecord(_)}
               ></Button>
             </Tooltip>
-          </Space>
-        ),
+          )}
+        </Space>
+      ),
     },
   ]
 
@@ -654,15 +660,17 @@ const PaymentPlan = () => {
   return (
     <>
       <Space.Compact>
-        <Button
-          color="primary"
-          onClick={() => showModal(true)}
-          variant="filled"
-          style={{ marginBottom: 16 }}
-          icon={<FiPlus />}
-        >
-          Tạo
-        </Button>
+        {checkRights('paymentPlan', ['create']) && (
+          <Button
+            color="primary"
+            onClick={() => showModal(true)}
+            variant="filled"
+            style={{ marginBottom: 16 }}
+            icon={<FiPlus />}
+          >
+            Tạo
+          </Button>
+        )}
         <Button
           color="primary"
           disabled={isProcessing}
@@ -672,7 +680,8 @@ const PaymentPlan = () => {
         >
           Export
         </Button>
-        {auth.role === sysmtemUserRole.basic ? (
+        {!checkRights('paymentPlan', ['write']) &&
+        !checkRights('paymentPlan', ['create']) ? (
           <></>
         ) : (
           <div>
@@ -697,13 +706,17 @@ const PaymentPlan = () => {
       </Space.Compact>
       <Table
         columns={columns}
-        dataSource={getFilteredPaymentPlans().map((i) => {
-          return {
-            ...i,
-            company: i?.companyId?.name,
-            dueDate: moment(i?.dueDate).format('DD/MM/YYYY'),
-          }
-        })}
+        dataSource={
+          checkRights('paymentPlan', ['read'])
+            ? getFilteredPaymentPlans().map((i) => {
+                return {
+                  ...i,
+                  company: i?.companyId?.name,
+                  dueDate: moment(i?.dueDate).format('DD/MM/YYYY'),
+                }
+              })
+            : []
+        }
         bordered
         size="small"
         rowKey={(record) => record._id}

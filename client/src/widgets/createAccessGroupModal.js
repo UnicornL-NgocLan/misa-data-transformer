@@ -9,31 +9,30 @@ import { MdEdit } from 'react-icons/md'
 import { MdDelete } from 'react-icons/md'
 import { useZustand } from '../zustand'
 import { objectMapping, sysmtemUserRole } from '../globalVariables'
-import lodash from 'lodash'
+import useCheckRights from '../utils/checkRights'
 
 const AccessGroupCreateModal = ({
   isModalOpen,
   handleCancel,
   handleFetchAccessGroups,
 }) => {
-  const { companies, users, rights: currentRights } = useZustand()
+  const { users, rights: currentRights } = useZustand()
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [isModalRightOpen, setIsModalRightOpen] = useState(false)
   const [rights, setRights] = useState([])
+  const checkRights = useCheckRights()
 
   const handleOk = async () => {
     try {
       if (loading) return
-      const { name, description, companyIds, userIds } = form.getFieldsValue()
-      if (!name?.trim() || companyIds.length === 0)
-        return alert('Vui lòng nhập đầy đủ thông tin tên và công ty')
+      const { name, description, userIds } = form.getFieldsValue()
+      if (!name?.trim()) return alert('Vui lòng nhập tên')
       setLoading(true)
       if (isModalOpen?._id) {
         await app.patch(`/api/update-access-group/${isModalOpen?._id}`, {
           name,
           description,
-          companyIds,
           rights,
           userIds,
         })
@@ -41,7 +40,6 @@ const AccessGroupCreateModal = ({
         await app.post('/api/create-access-group', {
           name,
           description,
-          companyIds,
           rights,
           userIds,
         })
@@ -78,7 +76,6 @@ const AccessGroupCreateModal = ({
     if (isModalOpen?._id) {
       form.setFieldValue('name', isModalOpen?.name)
       form.setFieldValue('description', isModalOpen?.description)
-      form.setFieldValue('companyIds', isModalOpen?.companyIds)
       form.setFieldValue('userIds', isModalOpen?.userIds)
       const respectiveRights = currentRights.filter(
         (i) => i.accessGroupId === isModalOpen._id
@@ -109,22 +106,15 @@ const AccessGroupCreateModal = ({
               />
             </Form.Item>
           </Space.Compact>
-          <Form.Item
-            name="companyIds"
-            label="Nhóm quyền này áp cho công ty"
-            rules={[
-              {
-                required: true,
-                message: 'Nhóm quyền này áp cho công ty nào!',
-              },
-            ]}
-          >
+          <Form.Item name="userIds" label="Người dùng thuộc nhóm quyền">
             <Select
               mode="tags"
               maxTagCount="responsive"
-              options={companies.map((i) => {
-                return { value: i._id, label: i.name }
-              })}
+              options={users
+                .filter((i) => i.role !== sysmtemUserRole.admin)
+                .map((i) => {
+                  return { value: i._id, label: i.name }
+                })}
             />
           </Form.Item>
         </>
@@ -132,23 +122,6 @@ const AccessGroupCreateModal = ({
     },
     {
       key: '2',
-      label: 'Người dùng',
-      children: (
-        <Form.Item name="userIds" label="Người dùng thuộc nhóm quyền">
-          <Select
-            mode="tags"
-            maxTagCount="responsive"
-            options={users
-              .filter((i) => i.role !== sysmtemUserRole.admin)
-              .map((i) => {
-                return { value: i._id, label: i.name }
-              })}
-          />
-        </Form.Item>
-      ),
-    },
-    {
-      key: '3',
       label: 'Quyền',
       children: (
         <>
@@ -269,6 +242,7 @@ const AccessGroupCreateModal = ({
         form={form}
         name="dynamic_ruleEdit"
         onFinish={handleOk}
+        disabled={!checkRights('accessGroup', ['write']) && isModalOpen?._id}
         layout="vertical"
       >
         <Tabs defaultActiveKey="1" items={items} />
