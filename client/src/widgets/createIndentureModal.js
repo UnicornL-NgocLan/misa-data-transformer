@@ -4,7 +4,6 @@ import { Form, Input, Select, DatePicker } from 'antd'
 import app from '../axiosConfig'
 import { useZustand } from '../zustand'
 import { InputNumber } from 'antd'
-import moment from 'moment'
 import dayjs from 'dayjs'
 
 const IndentureCreateModal = ({
@@ -14,7 +13,8 @@ const IndentureCreateModal = ({
 }) => {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
-  const { banks, companies, auth } = useZustand()
+  const { banks, companies, auth, loanContracts } = useZustand()
+  const [hasLoanContract, setHasLoanContract] = useState(false)
 
   const handleOk = async () => {
     try {
@@ -30,6 +30,9 @@ const IndentureCreateModal = ({
         residual,
         state,
         companyId,
+        currency,
+        exchangeRate,
+        loanContractId,
       } = form.getFieldsValue()
       if (
         !number?.trim() ||
@@ -39,7 +42,9 @@ const IndentureCreateModal = ({
         !interestRate ||
         !residual ||
         !state?.trim() ||
-        !companyId?.trim()
+        !companyId?.trim() ||
+        !currency ||
+        !exchangeRate
       )
         return alert('Vui lòng nhập đầy đủ thông tin')
       setLoading(true)
@@ -55,6 +60,9 @@ const IndentureCreateModal = ({
           residual,
           state,
           companyId,
+          currency,
+          exchangeRate,
+          loanContractId,
         })
       } else {
         await app.post('/api/create-indenture', {
@@ -68,6 +76,9 @@ const IndentureCreateModal = ({
           residual,
           state,
           companyId,
+          currency,
+          exchangeRate,
+          loanContractId,
         })
       }
       await handleFetchIndentures()
@@ -84,6 +95,11 @@ const IndentureCreateModal = ({
     handleCancel()
   }
 
+  const handleCalculateValueInterest = () => {
+    const { interestRate, amount } = form.getFieldsValue()
+    form.setFieldValue('interestAmount', ((interestRate * amount) / 100) * 0.5)
+  }
+
   useEffect(() => {
     if (isModalOpen?._id) {
       form.setFieldValue('number', isModalOpen?.number)
@@ -95,7 +111,15 @@ const IndentureCreateModal = ({
       form.setFieldValue('interestAmount', isModalOpen?.interestAmount)
       form.setFieldValue('residual', isModalOpen?.residual)
       form.setFieldValue('state', isModalOpen?.state)
+      form.setFieldValue('currrency', isModalOpen?.currrency)
+      form.setFieldValue('exchangeRate', isModalOpen?.exchangeRate)
+      form.setFieldValue('loanContractId', isModalOpen?.loanContractId?._id)
       form.setFieldValue('companyId', isModalOpen?.companyId?._id)
+    } else {
+      form.setFieldValue('interestRate', 0)
+      form.setFieldValue('currrency', 'vnd')
+      form.setFieldValue('exchangeRate', 1)
+      form.setFieldValue('state', 'ongoing')
     }
   }, [])
 
@@ -107,6 +131,7 @@ const IndentureCreateModal = ({
       title={isModalOpen?._id ? 'Cập nhật khế ước' : 'Tạo khế ước mới'}
       open={isModalOpen}
       onOk={handleOk}
+      width={800}
       onCancel={handleClose}
     >
       <Form
@@ -115,109 +140,228 @@ const IndentureCreateModal = ({
         onFinish={handleOk}
         layout="vertical"
       >
-        <Space direction="vertical">
-          <Space.Compact direction="horizontal" size="middle">
-            <Form.Item
-              name="number"
-              label="Số khế ước ngân hàng"
-              rules={[{ required: true, message: 'Nhập đầy đủ!' }]}
-            >
-              <Input className="w-full" placeholder="" />
-            </Form.Item>
-            <Form.Item
-              name="date"
-              label="Ngày"
-              rules={[{ required: true, message: 'Nhập đầy đủ!' }]}
-            >
-              <DatePicker />
-            </Form.Item>
-            <Form.Item
-              name="dueDate"
-              label="Ngày đến hạn"
-              rules={[{ required: true, message: 'Nhập đầy đủ!' }]}
-            >
-              <DatePicker />
-            </Form.Item>
-          </Space.Compact>
-          <Space.Compact
-            direction="horizontal"
-            size="middle"
-            style={{ display: 'flex', width: '100%' }}
+        <Space.Compact style={{ display: 'flex' }}>
+          <Form.Item
+            name="number"
+            style={{ flex: 1 }}
+            label="Số khế ước ngân hàng"
+            rules={[{ required: true, message: 'Nhập đầy đủ!' }]}
           >
-            <Form.Item
-              name="amount"
-              label="Giá trị"
-              style={{ flex: 3 }}
-              rules={[{ required: true, message: 'Nhập đầy đủ!' }]}
-            >
-              <InputNumber
-                style={{ width: '100%' }}
-                inputMode="decimal"
-                formatter={(value) =>
-                  value
-                    ? value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') // thousands with comma
-                    : ''
+            <Input className="w-full" placeholder="" />
+          </Form.Item>
+          <Form.Item
+            name="date"
+            style={{ flex: 1 }}
+            label="Ngày"
+            rules={[{ required: true, message: 'Nhập đầy đủ!' }]}
+          >
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item
+            name="dueDate"
+            style={{ flex: 1 }}
+            label="Ngày đến hạn"
+            rules={[{ required: true, message: 'Nhập đầy đủ!' }]}
+          >
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+        </Space.Compact>
+        <Space.Compact style={{ display: 'flex' }}>
+          <Form.Item
+            name="loanContractId"
+            label="Hợp đồng vay"
+            style={{ flex: 1 }}
+          >
+            <Select
+              showSearch
+              allowClear
+              onChange={(value) => {
+                if (value) {
+                  const myLoanContract = loanContracts.find(
+                    (i) => i?._id?.toString() === value.toString()
+                  )
+                  if (myLoanContract) {
+                    form.setFieldValue('bankId', myLoanContract.bankId._id)
+                    form.setFieldValue(
+                      'companyId',
+                      myLoanContract.companyId._id
+                    )
+                    form.setFieldValue('currency', myLoanContract.currency)
+                  }
                 }
-                parser={(value) =>
-                  value
-                    ? parseFloat(value.toString().replace(/,/g, '')) // remove commas
-                    : 0
+                setHasLoanContract(value)
+              }}
+              filterOption={(input, option) =>
+                (option?.label ?? '')
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
+              }
+              options={loanContracts.map((i) => {
+                return {
+                  value: i._id,
+                  label:
+                    i.name +
+                    ` (${i.value
+                      .toString()
+                      .replace(
+                        /\B(?=(\d{3})+(?!\d))/g,
+                        ','
+                      )} ${i.currency?.toUpperCase()})`,
                 }
-                min={0}
-              />
-            </Form.Item>
-            <Form.Item
-              name="interestRate"
-              style={{ flex: 2 }}
-              label="Lãi suất"
-              rules={[{ required: true, message: 'Nhập đầy đủ!' }]}
-            >
-              <InputNumber
-                inputMode="decimal"
-                style={{ width: '100%' }}
-                min={0}
-                formatter={(value) =>
-                  value
-                    ? value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') // thousands with comma
-                    : ''
-                }
-                parser={(value) =>
-                  value
-                    ? parseFloat(value.toString().replace(/,/g, '')) // remove commas
-                    : 0
-                }
-                addonAfter="%"
-              />
-            </Form.Item>
-            <Form.Item
-              name="interestAmount"
-              style={{ flex: 3 }}
-              label="Giá trị lãi"
-              rules={[{ required: true, message: 'Nhập đầy đủ!' }]}
-            >
-              <InputNumber
-                inputMode="decimal"
-                style={{ width: '100%' }}
-                formatter={(value) =>
-                  value
-                    ? value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') // thousands with comma
-                    : ''
-                }
-                parser={(value) =>
-                  value
-                    ? parseFloat(value.toString().replace(/,/g, '')) // remove commas
-                    : 0
-                }
-                min={0}
-              />
-            </Form.Item>
-          </Space.Compact>
-        </Space>
+              })}
+            />
+          </Form.Item>
+          <Form.Item
+            name="bankId"
+            label="Ngân hàng"
+            style={{ flex: 1 }}
+            rules={[{ required: true, message: 'Hãy chọn ngân hàng!' }]}
+          >
+            <Select
+              showSearch
+              disabled={hasLoanContract}
+              filterOption={(input, option) =>
+                (option?.label ?? '')
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
+              }
+              options={banks.map((i) => {
+                return { value: i._id, label: i.name }
+              })}
+            />
+          </Form.Item>
+        </Space.Compact>
         <Space.Compact
           direction="horizontal"
           size="middle"
           style={{ display: 'flex', width: '100%' }}
         >
+          <Form.Item
+            name="amount"
+            label="Giá trị"
+            style={{ flex: 1 }}
+            rules={[{ required: true, message: 'Nhập đầy đủ!' }]}
+          >
+            <InputNumber
+              style={{ width: '100%' }}
+              inputMode="decimal"
+              onChange={handleCalculateValueInterest}
+              formatter={(value) =>
+                value
+                  ? value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') // thousands with comma
+                  : ''
+              }
+              parser={(value) =>
+                value
+                  ? parseFloat(value.toString().replace(/,/g, '')) // remove commas
+                  : 0
+              }
+              min={0}
+            />
+          </Form.Item>
+          <Form.Item
+            style={{ flex: 1 }}
+            name="currency"
+            label="Loại tiền"
+            rules={[
+              {
+                required: true,
+                message: 'Hãy cho biết tài khoản này thuộc tiền tệ gì!',
+              },
+            ]}
+          >
+            <Select
+              showSearch
+              disabled={hasLoanContract}
+              filterOption={(input, option) =>
+                (option?.label ?? '')
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
+              }
+              options={[
+                { value: 'vnd', label: 'VND' },
+                { value: 'usd', label: 'USD' },
+                { value: 'cny', label: 'CNY' },
+                { value: 'thb', label: 'THB' },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item
+            name="exchangeRate"
+            label="Tỷ giá hối đoái"
+            style={{ flex: 1 }}
+            rules={[{ required: true, message: 'Nhập tỷ giá hối đoái!' }]}
+          >
+            <InputNumber
+              inputMode="decimal"
+              style={{ width: '100%' }}
+              formatter={(value) =>
+                value
+                  ? value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') // thousands with comma
+                  : ''
+              }
+              parser={(value) =>
+                value
+                  ? parseFloat(value.toString().replace(/,/g, '')) // remove commas
+                  : 0
+              }
+              min={0}
+            />
+          </Form.Item>
+        </Space.Compact>
+        <Space.Compact
+          direction="horizontal"
+          size="middle"
+          style={{ display: 'flex', width: '100%' }}
+        >
+          <Form.Item
+            name="interestRate"
+            style={{ flex: 1 }}
+            label="Lãi suất"
+            rules={[{ required: true, message: 'Nhập đầy đủ!' }]}
+          >
+            <InputNumber
+              inputMode="decimal"
+              style={{ width: '100%' }}
+              onChange={handleCalculateValueInterest}
+              min={0}
+              formatter={(value) =>
+                value
+                  ? value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') // thousands with comma
+                  : ''
+              }
+              parser={(value) =>
+                value
+                  ? parseFloat(value.toString().replace(/,/g, '')) // remove commas
+                  : 0
+              }
+              addonAfter="%"
+            />
+          </Form.Item>
+          <Form.Item
+            name="interestAmount"
+            style={{ flex: 1 }}
+            label="Giá trị lãi"
+            rules={[{ required: true, message: 'Nhập đầy đủ!' }]}
+          >
+            <InputNumber
+              inputMode="decimal"
+              readOnly={true}
+              disabled={true}
+              style={{ width: '100%' }}
+              formatter={(value) =>
+                value
+                  ? value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') // thousands with comma
+                  : ''
+              }
+              parser={(value) =>
+                value
+                  ? parseFloat(value.toString().replace(/,/g, '')) // remove commas
+                  : 0
+              }
+              min={0}
+            />
+          </Form.Item>
           <Form.Item
             name="residual"
             label="Giá trị còn lại"
@@ -240,6 +384,31 @@ const IndentureCreateModal = ({
               min={0}
             />
           </Form.Item>
+        </Space.Compact>
+        <Space.Compact style={{ display: 'flex' }}>
+          <Form.Item
+            name="companyId"
+            label="Công ty"
+            style={{ flex: 1 }}
+            rules={[
+              { required: true, message: 'Tài khoản này thuộc công ty nào!' },
+            ]}
+          >
+            <Select
+              showSearch
+              disabled={hasLoanContract}
+              filterOption={(input, option) =>
+                (option?.label ?? '')
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
+              }
+              options={companies
+                .filter((i) => auth.companyIds.includes(i._id))
+                .map((i) => {
+                  return { value: i._id, label: i.name }
+                })}
+            />
+          </Form.Item>
           <Form.Item
             name="state"
             label="Trạng thái"
@@ -260,40 +429,6 @@ const IndentureCreateModal = ({
             />
           </Form.Item>
         </Space.Compact>
-        <Form.Item
-          name="bankId"
-          label="Ngân hàng"
-          rules={[{ required: true, message: 'Hãy chọn ngân hàng!' }]}
-        >
-          <Select
-            showSearch
-            filterOption={(input, option) =>
-              (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-            }
-            options={banks.map((i) => {
-              return { value: i._id, label: i.name }
-            })}
-          />
-        </Form.Item>
-        <Form.Item
-          name="companyId"
-          label="Công ty"
-          rules={[
-            { required: true, message: 'Tài khoản này thuộc công ty nào!' },
-          ]}
-        >
-          <Select
-            showSearch
-            filterOption={(input, option) =>
-              (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-            }
-            options={companies
-              .filter((i) => auth.companyIds.includes(i._id))
-              .map((i) => {
-                return { value: i._id, label: i.name }
-              })}
-          />
-        </Form.Item>
       </Form>
     </Modal>
   )

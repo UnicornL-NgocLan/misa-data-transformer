@@ -39,6 +39,12 @@ router.post(
   checkRights('source', ['create']),
   dataCtrl.createSource
 )
+router.post(
+  '/create-loan-contract',
+  authenticate,
+  checkRights('loanContract', ['create']),
+  dataCtrl.createLoanContract
+)
 
 router.patch(
   '/update-bank/:id',
@@ -70,6 +76,12 @@ router.patch(
   checkRights('source', ['write']),
   dataCtrl.updateSource
 )
+router.patch(
+  '/update-loan-contract/:id',
+  authenticate,
+  checkRights('loanContract', ['write']),
+  dataCtrl.updateLoanContract
+)
 
 router.get('/get-companies', authenticate, dataCtrl.getCompanies)
 router.get('/get-banks', authenticate, dataCtrl.getBanks)
@@ -77,6 +89,7 @@ router.get('/get-bank-accounts', authenticate, dataCtrl.getBankAccounts)
 router.get('/get-indentures', authenticate, dataCtrl.getIndentures)
 router.get('/get-payment-plans', authenticate, dataCtrl.getPaymentPlans)
 router.get('/get-sources', authenticate, dataCtrl.getSources)
+router.get('/get-loan-contracts', authenticate, dataCtrl.getLoanContract)
 
 router.delete(
   '/delete-source/:id',
@@ -89,6 +102,12 @@ router.delete(
   authenticate,
   checkRights('paymentPlan', ['canDelete']),
   dataCtrl.deletePaymentPlan
+)
+router.delete(
+  '/delete-loan-contract/:id',
+  authenticate,
+  checkRights('loanContract', ['canDelete']),
+  dataCtrl.deleteLoanContract
 )
 
 module.exports = router

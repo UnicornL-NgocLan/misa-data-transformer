@@ -4,6 +4,7 @@ const BankAccounts = require('../models/bankAccount')
 const Indentures = require('../models/indenture')
 const PaymentPlans = require('../models/paymentPlan')
 const Sources = require('../models/source')
+const LoanContracts = require('../models/loanContract')
 
 const dataCtrl = {
   createCompany: async (req, res) => {
@@ -70,6 +71,9 @@ const dataCtrl = {
         residual,
         state,
         companyId,
+        loanContractId,
+        currency,
+        exchangeRate,
       } = req.body
       if (
         !number.trim() ||
@@ -79,7 +83,9 @@ const dataCtrl = {
         !interestRate ||
         !residual ||
         !state.trim() ||
-        !companyId.trim()
+        !companyId.trim() ||
+        !currency ||
+        !exchangeRate
       )
         return res
           .status(400)
@@ -96,6 +102,9 @@ const dataCtrl = {
         residual,
         state,
         companyId,
+        loanContractId,
+        currency,
+        exchangeRate,
       })
 
       res.status(200).json({ msg: 'Đã tạo hoàn tất ngân hàng' })
@@ -133,10 +142,8 @@ const dataCtrl = {
       const banks = await Indentures.find({
         companyId: { $in: req.user.companyIds },
       })
-        .select(
-          'number bankId amount date dueDate interestRate interestAmount residual state companyId'
-        )
         .populate('bankId companyId', 'name')
+        .populate('loanContractId', 'name companyId')
       res.status(200).json({ data: banks })
     } catch (error) {
       res.status(500).json({ msg: error.message })
@@ -253,6 +260,7 @@ const dataCtrl = {
         conversedValue,
         type,
         documentLink,
+        documentState,
       } = req.body
       if (
         !subject.trim() ||
@@ -261,7 +269,8 @@ const dataCtrl = {
         !content.trim() ||
         !companyId.trim() ||
         !currency.trim() ||
-        !type.trim()
+        !type.trim() ||
+        !documentState
       )
         return res
           .status(400)
@@ -281,6 +290,7 @@ const dataCtrl = {
         note,
         type,
         documentLink,
+        documentState,
       })
 
       res.status(200).json({ msg: 'Đã tạo hoàn tất kế hoạch thanh toán' })
@@ -409,6 +419,104 @@ const dataCtrl = {
         )
         .populate('companyId updatedBy', 'name')
       res.status(200).json({ data: list })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  createLoanContract: async (req, res) => {
+    try {
+      const {
+        name,
+        value,
+        bankId,
+        companyId,
+        date,
+        dueDate,
+        state,
+        currency,
+        exchangeRate,
+        conversedValue,
+      } = req.body
+      if (
+        !name ||
+        !value ||
+        !bankId ||
+        !companyId ||
+        !date ||
+        !state ||
+        !currency
+      )
+        return res.status(400).json({ msg: 'Vui lòng nhập đầy đủ thông tin' })
+      await LoanContracts.create({
+        name,
+        value,
+        bankId,
+        companyId,
+        date,
+        dueDate,
+        state,
+        currency,
+        exchangeRate,
+        conversedValue,
+      })
+      res.status(200).json({ msg: 'Đã tạo thành công' })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  getLoanContract: async (req, res) => {
+    try {
+      const loanContracts = await LoanContracts.find({
+        companyId: { $in: req.user.companyIds },
+      }).populate('companyId bankId', 'name')
+      res.status(200).json({ data: loanContracts })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  updateLoanContract: async (req, res) => {
+    try {
+      let parameters = { ...req.body }
+      const { id } = req.params
+      Object.keys(parameters).forEach((key) => {
+        if (parameters[key] === null) {
+          delete parameters[key]
+        }
+      })
+      const newOne = await LoanContracts.findOneAndUpdate(
+        { _id: id, companyId: { $in: req.user.companyIds } },
+        { ...parameters },
+        { new: true }
+      )
+      if (!newOne)
+        return res
+          .status(400)
+          .json({ msg: 'Hợp đồng vay này không có trong cơ sở dữ liệu' })
+      res.status(200).json({ msg: 'Đã cập nhật thành công' })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  deleteLoanContract: async (req, res) => {
+    try {
+      const { id } = req.params
+      await LoanContracts.findOneAndDelete({
+        _id: id,
+        companyId: { $in: req.user.companyIds },
+      })
+      await Indentures.updateMany(
+        {
+          loanContractId: id,
+        },
+        {
+          loanContractId: undefined,
+        }
+      )
+      res.status(200).json({ msg: 'Đã xóa thành công' })
     } catch (error) {
       res.status(500).json({ msg: error.message })
     }

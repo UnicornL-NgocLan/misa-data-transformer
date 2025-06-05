@@ -3,27 +3,27 @@ import { Table, Button, Space, Tag, Tooltip } from 'antd'
 import { useZustand } from '../../zustand'
 import { FiPlus } from 'react-icons/fi'
 import IndentureCreateModal from '../../widgets/createIndentureModal'
-import { Input } from 'antd'
+import { Input, Typography } from 'antd'
 import Highlighter from 'react-highlight-words'
 import { SearchOutlined } from '@ant-design/icons'
 import app from '../../axiosConfig'
 import moment from 'moment'
 import { MdEdit } from 'react-icons/md'
-import { sysmtemUserRole } from '../../globalVariables'
 import useCheckRights from '../../utils/checkRights'
+import { FaFileExport } from 'react-icons/fa'
+import * as FileSaver from 'file-saver'
 
 const Indenture = () => {
   const [indentures, setIndentures] = useState([])
-  const {
-    indentures: currentIndentures,
-    auth,
-    setIndentureState,
-  } = useZustand()
+  const { indentures: currentIndentures, setIndentureState } = useZustand()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [searchedColumn, setSearchedColumn] = useState('')
   const searchInput = useRef(null)
+  const [isProcessing, setIsProcessing] = useState(false)
   const checkRights = useCheckRights()
+
+  const { Text } = Typography
 
   const showModal = (user) => {
     setIsModalOpen(user)
@@ -159,12 +159,43 @@ const Indenture = () => {
     }
   }
 
+  const handleExportExcel = () => {
+    setIsProcessing(true)
+    const worker = new Worker(
+      new URL('../../workers/exportToExcelFile.worker.js', import.meta.url)
+    )
+    worker.postMessage({
+      data: indentures.map((i) => {
+        let object = {
+          ...i,
+          companyId: i.companyId?.name,
+          bankId: i.bankId?.name,
+          loanContractId: i.loanContractId?.name,
+        }
+        delete object.__v
+        return object
+      }),
+      fileName: 'Dữ liệu khế ước',
+    })
+    worker.onmessage = (e) => {
+      const { blob, fileName } = e.data
+      FileSaver.saveAs(blob, fileName)
+      worker.terminate()
+      setIsProcessing(false)
+    }
+    worker.onerror = (err) => {
+      console.error('Worker error:', err)
+      worker.terminate()
+      setIsProcessing(false)
+    }
+  }
+
   const columns = [
     {
       title: 'Công ty',
       dataIndex: 'company',
       key: 'company',
-      width: 200,
+      width: 250,
       ...getColumnSearchProps('company'),
     },
     {
@@ -181,6 +212,14 @@ const Indenture = () => {
       width: 150,
       fixed: 'left',
       ...getColumnSearchProps('number'),
+    },
+    {
+      title: 'Hợp đồng vay',
+      dataIndex: 'loanContract',
+      key: 'loanContract',
+      width: 150,
+      fixed: 'left',
+      ...getColumnSearchProps('loanContract'),
     },
     {
       title: 'Ngày',
@@ -209,6 +248,45 @@ const Indenture = () => {
       align: 'right',
       sorter: (a, b) => a.amount - b.amount,
       width: 130,
+      render: (value) => {
+        return <span>{Intl.NumberFormat().format(value)}</span>
+      },
+    },
+    {
+      title: 'Tiền tệ',
+      dataIndex: 'currency',
+      key: 'currency',
+      align: 'center',
+      width: 100,
+      fixed: 'right',
+      filters: [
+        {
+          text: 'VND',
+          value: 'vnd',
+        },
+        {
+          text: 'USD',
+          value: 'usd',
+        },
+        {
+          text: 'THB',
+          value: 'thb',
+        },
+        {
+          text: 'CNY',
+          value: 'cny',
+        },
+      ],
+      onFilter: (value, record) => record.currency === value,
+      render: (state) => <span>{state?.toUpperCase()}</span>,
+    },
+    {
+      title: 'Tỷ giá',
+      dataIndex: 'exchangeRate',
+      key: 'exchangeRate',
+      align: 'right',
+      width: 100,
+      ...getColumnSearchProps('exchangeRate'),
       render: (value) => {
         return <span>{Intl.NumberFormat().format(value)}</span>
       },
@@ -249,7 +327,6 @@ const Indenture = () => {
       key: 'state',
       width: 100,
       align: 'center',
-      fixed: 'right',
       filters: [
         {
           text: 'Chưa xong',
@@ -296,17 +373,28 @@ const Indenture = () => {
 
   return (
     <>
-      {checkRights('indenture', ['create']) && (
+      <Space.Compact>
+        {checkRights('indenture', ['create']) && (
+          <Button
+            color="primary"
+            onClick={() => showModal(true)}
+            variant="filled"
+            style={{ marginBottom: 16 }}
+            icon={<FiPlus />}
+          >
+            Tạo
+          </Button>
+        )}
         <Button
           color="primary"
-          onClick={() => showModal(true)}
-          variant="filled"
+          disabled={isProcessing}
+          onClick={handleExportExcel}
           style={{ marginBottom: 16 }}
-          icon={<FiPlus />}
+          icon={<FaFileExport />}
         >
-          Tạo
+          Export
         </Button>
-      )}
+      </Space.Compact>
       <Table
         columns={columns}
         dataSource={
@@ -316,6 +404,7 @@ const Indenture = () => {
                   ...i,
                   bank: i.bankId?.name,
                   company: i.companyId?.name,
+                  loanContract: i.loanContractId?.name,
                 }
               })
             : []
@@ -334,6 +423,37 @@ const Indenture = () => {
               {range[0]}-{range[1]} / {total}
             </span>
           ),
+        }}
+        summary={(pageData) => {
+          let totalAmount = 0
+
+          pageData.forEach(({ amount }) => {
+            totalAmount += amount
+          })
+
+          return (
+            <>
+              <Table.Summary.Row style={{ background: '#FAFAFA' }}>
+                <Table.Summary.Cell>
+                  <Text style={{ fontWeight: 600 }}>Tổng cộng</Text>
+                </Table.Summary.Cell>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Table.Summary.Cell key={i}></Table.Summary.Cell>
+                ))}
+                <Table.Summary.Cell align="end">
+                  <Text style={{ fontWeight: 600 }}>
+                    {pageData.length > 0 &&
+                    pageData.every((i) => i.currency === pageData[0].currency)
+                      ? Intl.NumberFormat().format(totalAmount)
+                      : ''}
+                  </Text>
+                </Table.Summary.Cell>
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <Table.Summary.Cell key={i}></Table.Summary.Cell>
+                ))}
+              </Table.Summary.Row>
+            </>
+          )
         }}
       />
       {isModalOpen && (

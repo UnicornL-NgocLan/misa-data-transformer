@@ -9,7 +9,7 @@ import { SearchOutlined } from '@ant-design/icons'
 import app from '../../axiosConfig'
 import moment from 'moment'
 import { MdEdit } from 'react-icons/md'
-import { sysmtemUserRole, validExcelFile } from '../../globalVariables'
+import { validExcelFile } from '../../globalVariables'
 import { MdDelete } from 'react-icons/md'
 import { FaFileExport } from 'react-icons/fa'
 import * as FileSaver from 'file-saver'
@@ -28,7 +28,6 @@ const PaymentPlan = () => {
   const [paymentPlans, setPaymentPlans] = useState([])
   const {
     paymentPlans: currentPaymentPlans,
-    auth,
     setPaymentPlanState,
     companies,
   } = useZustand()
@@ -225,8 +224,6 @@ const PaymentPlan = () => {
           ...i,
           companyId: i.companyId?.name,
         }
-        delete object.createdAt
-        delete object.updatedAt
         delete object.__v
         return object
       }),
@@ -279,6 +276,9 @@ const PaymentPlan = () => {
               ['in_country', 'out_country', 'delivery', 'other'].find(
                 (o) => o === i.type
               ) &&
+              ['return', 'not_return', 'holding'].find(
+                (e) => e === i.documentState
+              ) &&
               ['vnd', 'usd', 'cny', 'thb'].find((e) => e === i.currency) &&
               (i._id ? paymentPlans.find((u) => u._id === i._id) : true)
           )
@@ -307,6 +307,7 @@ const PaymentPlan = () => {
               state,
               note,
               type,
+              documentState,
             } = i
             const newCompanyId = companies.find(
               (item) => item.name === companyId
@@ -328,7 +329,8 @@ const PaymentPlan = () => {
               !myDueDate ||
               !content?.trim() ||
               !companyId ||
-              !state
+              !state ||
+              !documentState
             ) {
               fileInputRef.current.value = ''
               setIsProcessing(false)
@@ -340,7 +342,7 @@ const PaymentPlan = () => {
               subject,
               content,
               amount,
-              dueDate: myDueDate,
+              dueDate: new Date(myDueDate).setUTCHours(0, 0, 0, 0),
               companyId: newCompanyId._id,
               document,
               currency,
@@ -350,6 +352,7 @@ const PaymentPlan = () => {
               note,
               type,
               state,
+              documentState,
             }
 
             return i._id
@@ -580,12 +583,10 @@ const PaymentPlan = () => {
       ),
     },
     {
-      title: 'Trạng thái',
+      title: 'Tr. thái thanh toán',
       dataIndex: 'state',
       key: 'state',
       align: 'center',
-      fixed: 'right',
-      width: 110,
       filters: [
         {
           text: 'Chưa xong',
@@ -601,6 +602,39 @@ const PaymentPlan = () => {
       render: (state) => (
         <Tag color={state === 'done' ? 'green' : ''}>
           {state === 'done' ? 'Hoàn thành' : 'Chưa xong'}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Tr. thái hồ sơ',
+      dataIndex: 'documentState',
+      key: 'state',
+      align: 'center',
+      filters: [
+        { value: 'holding', text: 'Đang giữ' },
+        { value: 'return', text: 'Đã trả' },
+        { value: 'not_return', text: 'Chưa trả' },
+      ],
+      onFilter: (value, record) => record.state === value,
+      render: (state) => (
+        <Tag
+          color={
+            state === 'return'
+              ? 'green'
+              : state === 'holding'
+              ? 'red'
+              : state === 'not_return'
+              ? 'blue'
+              : ''
+          }
+        >
+          {state === 'holding'
+            ? 'Đang giữ'
+            : state === 'return'
+            ? 'Đã trả'
+            : state === 'not_return'
+            ? 'Chưa trả'
+            : 'Không xác định'}
         </Tag>
       ),
     },

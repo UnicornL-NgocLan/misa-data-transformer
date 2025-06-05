@@ -206,4 +206,5 @@ export const objectMapping = {
   user: 'Người dùng',
   company: 'Công ty',
   accessGroup: 'Nhóm quyền',
+  loanContract: 'Hợp đồng vay',
 }

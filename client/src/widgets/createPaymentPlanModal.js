@@ -42,6 +42,7 @@ const PaymentPlanCreateModal = ({
         note,
         type,
         documentLink,
+        documentState,
       } = form.getFieldsValue()
       if (
         !subject?.trim() ||
@@ -50,7 +51,8 @@ const PaymentPlanCreateModal = ({
         !state?.trim() ||
         !content?.trim() ||
         !companyId ||
-        !type?.trim()
+        !type?.trim() ||
+        !documentState
       )
         return alert('Vui lòng nhập đầy đủ thông tin')
 
@@ -74,6 +76,7 @@ const PaymentPlanCreateModal = ({
           note,
           type,
           documentLink,
+          documentState,
         })
       } else {
         await app.post('/api/create-payment-plan', {
@@ -91,6 +94,7 @@ const PaymentPlanCreateModal = ({
           note,
           type,
           documentLink,
+          documentState,
         })
       }
       await handleFetchPaymentPlans()
@@ -128,6 +132,7 @@ const PaymentPlanCreateModal = ({
       form.setFieldValue('note', isModalOpen?.note)
       form.setFieldValue('type', isModalOpen?.type)
       form.setFieldValue('documentLink', isModalOpen?.documentLink)
+      form.setFieldValue('documentState', isModalOpen?.documentState)
     } else {
       form.setFieldValue('state', 'ongoing')
       form.setFieldValue('currency', 'vnd')
@@ -140,7 +145,7 @@ const PaymentPlanCreateModal = ({
     <Modal
       okText="Xác nhận"
       cancelText="Hủy"
-      width={800}
+      width={1000}
       confirmLoading={loading}
       title={
         isModalOpen?._id
@@ -329,7 +334,7 @@ const PaymentPlanCreateModal = ({
         <Space.Compact style={{ display: 'flex' }}>
           <Form.Item
             name="state"
-            label="Trạng thái"
+            label="Trạng thái thanh toán"
             style={{ flex: 1 }}
             rules={[{ required: true, message: 'Hãy chọn trạng thái!' }]}
           >
@@ -347,10 +352,31 @@ const PaymentPlanCreateModal = ({
               ]}
             />
           </Form.Item>
-          <Form.Item name="note" label="Ghi chú" style={{ flex: 3 }}>
+          <Form.Item
+            name="documentState"
+            label="Trạng thái hồ sơ"
+            style={{ flex: 1 }}
+            rules={[{ required: true, message: 'Hãy chọn trạng thái hồ sơ!' }]}
+          >
+            <Select
+              showSearch
+              disabled={!isModalOpen?._id}
+              filterOption={(input, option) =>
+                (option?.label ?? '')
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
+              }
+              options={[
+                { value: 'holding', label: 'Đang giữ' },
+                { value: 'return', label: 'Đã trả' },
+                { value: 'not_return', label: 'Chưa trả' },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item name="note" label="Ghi chú" style={{ flex: 1 }}>
             <Input className="w-full" placeholder="" />
           </Form.Item>
-          <Form.Item style={{ flex: 2 }} name="type" label="Loại">
+          <Form.Item style={{ flex: 1 }} name="type" label="Loại">
             <Select
               filterOption={(input, option) =>
                 (option?.label ?? '')
@@ -368,7 +394,7 @@ const PaymentPlanCreateModal = ({
           <Form.Item
             name="documentLink"
             label="Link chứng từ kèm theo"
-            style={{ flex: 2 }}
+            style={{ flex: 1 }}
           >
             <Input className="w-full" placeholder="" />
           </Form.Item>

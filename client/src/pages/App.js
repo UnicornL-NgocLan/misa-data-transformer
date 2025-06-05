@@ -6,6 +6,7 @@ import { FaRegBuilding } from 'react-icons/fa'
 import { Dropdown } from 'antd'
 import { PoweroffOutlined, LockOutlined } from '@ant-design/icons'
 import { FaCaretDown } from 'react-icons/fa'
+import { FaHandshakeSimple } from 'react-icons/fa6'
 import app from '../axiosConfig'
 import ChangePasswordModal from '../widgets/changePasswordModal'
 import { Outlet, useNavigate } from 'react-router'
@@ -47,12 +48,13 @@ const App = () => {
     setObjectsState,
     setRightsState,
     setAccessGroupState,
+    setLoanContractState,
   } = useZustand()
   const [loading, setLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isFetching, setIsFetching] = useState(true)
   const [sidebarIndex, setSidebarIndex] = useState('1')
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
   const navigate = useNavigate()
   const checkRights = useCheckRights()
 
@@ -106,6 +108,15 @@ const App = () => {
       disabled: !checkRights('bankAccount', ['read']),
       onClick: () => {
         handleNavigate('/bank-account', 4)
+      },
+    },
+    {
+      key: 4.5,
+      icon: <FaHandshakeSimple />,
+      label: 'Hợp đồng vay',
+      disabled: !checkRights('loanContract', ['read']),
+      onClick: () => {
+        handleNavigate('/loan-contract', 4.5)
       },
     },
     {
@@ -182,6 +193,7 @@ const App = () => {
         app.get('/api/get-objects'),
         app.get('/api/get-rights'),
         app.get('/api/get-access-groups'),
+        app.get('/api/get-loan-contracts'),
       ])
 
       setUserState(result[0]?.data?.data)
@@ -194,6 +206,7 @@ const App = () => {
       setObjectsState(result[7]?.data?.data)
       setRightsState(result[8]?.data?.data)
       setAccessGroupState(result[9]?.data?.data)
+      setLoanContractState(result[10]?.data?.data)
     } catch (error) {
       alert(error?.response?.data?.msg || error)
     } finally {

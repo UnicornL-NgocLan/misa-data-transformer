@@ -1,42 +1,36 @@
 import { useState, useEffect, useRef } from 'react'
-import {
-  Table,
-  Button,
-  Space,
-  Tooltip,
-  Tag,
-  Typography,
-  DatePicker,
-} from 'antd'
+import { Table, Button, Space, Tag, Tooltip, DatePicker } from 'antd'
 import { useZustand } from '../../zustand'
 import { FiPlus } from 'react-icons/fi'
-import SourceCreateModal from '../../widgets/createSourceModal'
-import { Input } from 'antd'
+import { Input, Typography } from 'antd'
 import Highlighter from 'react-highlight-words'
 import { SearchOutlined } from '@ant-design/icons'
 import app from '../../axiosConfig'
 import moment from 'moment'
 import { MdEdit } from 'react-icons/md'
 import { MdDelete } from 'react-icons/md'
+import _ from 'lodash'
+import { FaCheck } from 'react-icons/fa'
+import dayjs from 'dayjs'
+import customParseFormat from 'dayjs/plugin/customParseFormat'
+import isBetween from 'dayjs/plugin/isBetween'
+import useCheckRights from '../../utils/checkRights'
+import LoanContractCreateModal from '../../widgets/createLoanContractModal'
+import { Avatar, List } from 'antd'
+import payImg from '../../images/pay.png'
 import { FaFileExport } from 'react-icons/fa'
 import * as FileSaver from 'file-saver'
-import { FaUpload } from 'react-icons/fa'
-import { validExcelFile } from '../../globalVariables'
-import useCheckRights from '../../utils/checkRights'
-import dayjs from 'dayjs'
-import _ from 'lodash'
 
-const { Text } = Typography
 const { RangePicker } = DatePicker
+dayjs.extend(customParseFormat)
+dayjs.extend(isBetween)
 
-const Source = () => {
-  const [sources, setSources] = useState([])
+const LoanContract = () => {
+  const [loanContracts, setLoanContracts] = useState([])
   const {
-    sources: currentSources,
-    setSourceState,
-    auth,
-    companies,
-    bankAccounts,
+    loanContracts: currentLoanContracts,
+    setLoanContractState,
+    indentures,
   } = useZustand()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
@@ -46,8 +40,9 @@ const Source = () => {
   const [filteredData, setFilteredData] = useState([])
   const [isFilteredDate, setIsFilteredDate] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
-  const fileInputRef = useRef(null)
   const checkRights = useCheckRights()
+
+  const { Text } = Typography
 
   const showModal = (user) => {
     setIsModalOpen(user)
@@ -67,25 +62,6 @@ const Source = () => {
     clearFilters()
     setSearchText('')
   }
-
-  const handleDateFilter = (dates) => {
-    if (!dates || dates.length === 0) {
-      setFilteredData(sources)
-      setIsFilteredDate(false)
-    } else {
-      const [start, end] = dates
-      const filtered = sources.filter((item) => {
-        const startDay = dayjs(start, 'DD/MM/YYYY')
-        const endDay = dayjs(end, 'DD/MM/YYYY')
-        const dueDateFormat = dayjs(item.updatedAt)
-        return dueDateFormat.isBetween(startDay, endDay, 'day', '[]')
-      })
-      setFilteredData(filtered)
-      setIsFilteredDate(true)
-    }
-  }
-
-  const getFilteredSources = () => (isFilteredDate ? filteredData : sources)
 
   const getColumnSearchProps = (dataIndex) => ({
     filterDropdown: ({
@@ -192,11 +168,11 @@ const Source = () => {
       ),
   })
 
-  const handleFetchSources = async () => {
+  const handleFetchLoanContracts = async () => {
     try {
-      const { data } = await app.get('/api/get-sources')
-      setSources(data.data)
-      setSourceState(data.data)
+      const { data } = await app.get('/api/get-loan-contracts')
+      setLoanContracts(data.data)
+      setLoanContractState(data.data)
     } catch (error) {
       alert(error?.response?.data?.msg || error)
     }
@@ -207,10 +183,10 @@ const Source = () => {
       if (loading) return
       if (!window.confirm('Bạn có chắc muốn xóa dữ liệu này?')) return
       setLoading(true)
-      await app.delete(`/api/delete-source/${record._id}`)
-      const newSources = [...sources].filter((i) => i._id !== record._id)
-      setSources(newSources)
-      setSourceState(newSources)
+      await app.delete(`/api/delete-loan-contract/${record._id}`)
+      const newSources = [...loanContracts].filter((i) => i._id !== record._id)
+      setLoanContracts(newSources)
+      setLoanContractState(newSources)
     } catch (error) {
       alert(error?.response?.data?.msg || error)
     } finally {
@@ -218,25 +194,61 @@ const Source = () => {
     }
   }
 
+  const handleCheckDone = async (record) => {
+    try {
+      if (loading) return
+      setLoading(true)
+      await app.patch(`/api/update-loan-contract/${record._id}`, {
+        state: 'done',
+      })
+      const newSources = [...loanContracts].map((i) =>
+        i._id === record._id ? { ...i, state: 'done' } : i
+      )
+      setLoanContracts(newSources)
+      setLoanContractState(newSources)
+    } catch (error) {
+      alert(error?.response?.data?.msg || error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDateFilter = (dates) => {
+    if (!dates || dates.length === 0) {
+      setFilteredData(loanContracts)
+      setIsFilteredDate(false)
+    } else {
+      const [start, end] = dates
+      const filtered = loanContracts.filter((item) => {
+        const startDay = dayjs(start, 'DD/MM/YYYY')
+        const endDay = dayjs(end, 'DD/MM/YYYY')
+        const dueDateFormat = dayjs(item.dueDate)
+        return dueDateFormat.isBetween(startDay, endDay, 'day', '[]')
+      })
+      setFilteredData(filtered)
+      setIsFilteredDate(true)
+    }
+  }
+
+  const getFilteredPaymentPlans = () =>
+    isFilteredDate ? filteredData : loanContracts
+
   const handleExportExcel = () => {
     setIsProcessing(true)
     const worker = new Worker(
       new URL('../../workers/exportToExcelFile.worker.js', import.meta.url)
     )
     worker.postMessage({
-      data: sources.map((i) => {
-        let myObj = {
+      data: loanContracts.map((i) => {
+        let object = {
           ...i,
           companyId: i.companyId?.name,
-          bankAccountId:
-            bankAccounts.find((item) => item._id === i.bankAccountId)
-              ?.accountNumber || '',
+          bankId: i.bankId?.name,
         }
-        delete myObj.updatedAt
-        delete myObj.updatedBy
-        return myObj
+        delete object.__v
+        return object
       }),
-      fileName: 'Dữ liệu nguồn',
+      fileName: 'Dữ liệu hợp đồng vay',
     })
     worker.onmessage = (e) => {
       const { blob, fileName } = e.data
@@ -251,122 +263,6 @@ const Source = () => {
     }
   }
 
-  const handleAddFile = async (e) => {
-    try {
-      const file = e.target.files
-      const fileType = file[0].type
-      if (!validExcelFile.includes(fileType))
-        return alert('File của bạn phải là excel')
-
-      setIsProcessing(true)
-      // Read file into ArrayBuffer
-      const buffer = await new Promise((resolve, reject) => {
-        const fileReader = new FileReader()
-        fileReader.readAsArrayBuffer(file[0])
-        fileReader.onload = (e) => resolve(e.target.result)
-        fileReader.onerror = (err) => reject(err)
-      })
-
-      // Create a worker from public directory
-      const worker = new Worker(
-        new URL('../../workers/excelWorker.worker.js', import.meta.url)
-      )
-
-      // Post the buffer to the worker
-      worker.postMessage(buffer)
-
-      // Handle response from the worker
-      worker.onmessage = async (e) => {
-        const { success, data, error } = e.data
-        if (success) {
-          const allCompaniesValid = data.every(
-            (i) =>
-              companies.find((item) => item.name === i.companyId) &&
-              ['cash', 'bank'].find((o) => o === i.type) &&
-              ['vnd', 'usd', 'cny', 'thb'].find((e) => e === i.currency)
-          )
-
-          if (!allCompaniesValid) {
-            fileInputRef.current.value = ''
-            setIsProcessing(false)
-            worker.terminate()
-            return alert(
-              'Kiểm tra lại công ty, loại và đơn vị tiền tệ xem có tồn tại trong hệ thống không?'
-            )
-          }
-
-          const myMapList = data.map((i) => {
-            const {
-              _id,
-              companyId,
-              currency,
-              type,
-              value,
-              name,
-              bankAccountId,
-            } = i
-            const newCompanyId = companies.find(
-              (item) => item.name === companyId
-            )
-
-            const newBankAccountId = bankAccounts.find(
-              (item) =>
-                item.accountNumber.toString() === bankAccountId.toString()
-            )
-
-            if (
-              !name?.trim() ||
-              !currency?.trim() ||
-              !companyId ||
-              !type ||
-              !value ||
-              (type === 'cash' && newBankAccountId?._id?.toString()?.trim()) ||
-              (type === 'bank' && !newBankAccountId?._id?.toString()?.trim())
-            ) {
-              fileInputRef.current.value = ''
-              setIsProcessing(false)
-              worker.terminate()
-              return alert('Đảm bảo dữ liệu phải đầy đủ và hợp lệ')
-            }
-
-            const myData = {
-              companyId: newCompanyId._id,
-              currency,
-              type,
-              value,
-              name,
-              bankAccountId: newBankAccountId?._id,
-            }
-
-            return _id
-              ? app.patch(`/api/update-source/${_id}`, myData)
-              : app.post('/api/create-source', myData)
-          })
-          await Promise.all(myMapList)
-          await handleFetchSources()
-          setIsProcessing(false)
-        } else {
-          alert('Lỗi xử lý file: ' + error)
-        }
-
-        worker.terminate()
-      }
-
-      // Handle worker errors
-      worker.onerror = (err) => {
-        console.error('Worker error:', err)
-        alert('Đã xảy ra lỗi trong quá trình xử lý file.')
-        worker.terminate()
-      }
-    } catch (error) {
-      alert('Lỗi không xác định: ' + error?.response?.data?.msg)
-      setIsProcessing(false)
-    } finally {
-      fileInputRef.current.value = ''
-      setIsProcessing(false)
-    }
-  }
-
   const columns = [
     {
       title: 'Công ty',
@@ -377,41 +273,63 @@ const Source = () => {
       ...getColumnSearchProps('company'),
     },
     {
-      title: 'Sổ',
+      title: 'Tên hợp đồng',
       dataIndex: 'name',
       key: 'name',
-      width: 300,
+      width: 130,
       ...getColumnSearchProps('name'),
     },
     {
-      title: 'Loại',
-      dataIndex: 'type',
-      key: 'type',
-      align: 'center',
-      width: 110,
-      filters: [
-        {
-          text: 'Tiền mặt',
-          value: 'cash',
-        },
-        {
-          text: 'Ngân hàng',
-          value: 'bank',
-        },
-      ],
-      onFilter: (value, record) => record.type === value,
-      render: (state) => (
-        <Tag color={state === 'cash' ? 'green' : 'red'}>
-          {state === 'cash' ? 'Tiền mặt' : 'Ngân hàng'}
-        </Tag>
+      title: 'Ngân hàng',
+      dataIndex: 'bank',
+      key: 'bank',
+      width: 200,
+      ...getColumnSearchProps('bank'),
+    },
+    {
+      title: 'Ngày hợp đồng',
+      dataIndex: 'date',
+      key: 'date',
+      align: 'right',
+      width: 150,
+      sorter: (a, b) => {
+        return dayjs(a.date, 'DD/MM/YYYY') - dayjs(b.date, 'DD/MM/YYYY')
+      },
+    },
+    {
+      title: 'Ngày hết hạn',
+      dataIndex: 'dueDate',
+      key: 'dueDate',
+      align: 'right',
+      width: 150,
+      sorter: (a, b) => {
+        return dayjs(a.dueDate, 'DD/MM/YYYY') - dayjs(b.dueDate, 'DD/MM/YYYY')
+      },
+      filterDropdown: () => (
+        <div style={{ padding: 8 }}>
+          <RangePicker onChange={handleDateFilter} />
+        </div>
       ),
+      onFilter: () => {},
+    },
+    {
+      title: 'Giá trị',
+      dataIndex: 'value',
+      key: 'value',
+      align: 'right',
+      width: 130,
+      sorter: (a, b) => a.value - b.value,
+      render: (value) => {
+        return <span>{Intl.NumberFormat().format(value)}</span>
+      },
     },
     {
       title: 'Tiền tệ',
       dataIndex: 'currency',
       key: 'currency',
-      width: 110,
       align: 'center',
+      width: 100,
+      fixed: 'right',
       filters: [
         {
           text: 'VND',
@@ -434,49 +352,74 @@ const Source = () => {
       render: (state) => <span>{state.toUpperCase()}</span>,
     },
     {
-      title: 'Số dư',
-      dataIndex: 'value',
-      key: 'value',
+      title: 'Tỷ giá',
+      dataIndex: 'exchangeRate',
+      key: 'exchangeRate',
       align: 'right',
-      sorter: (a, b) => a.value - b.value,
+      width: 100,
+      ...getColumnSearchProps('exchangeRate'),
       render: (value) => {
         return <span>{Intl.NumberFormat().format(value)}</span>
       },
     },
     {
-      title: 'Lần cập nhật gần nhất',
-      dataIndex: 'updatedAt',
-      key: 'updatedAt',
-      align: 'center',
-      sorter: (a, b) => moment(a.updatedAt) - moment(b.updatedAt),
-      render: (value) => (
-        <span>{moment(value).format('DD/MM/YYYY HH:mm:ss')}</span>
-      ),
-      filterDropdown: () => (
-        <div style={{ padding: 8 }}>
-          <RangePicker onChange={handleDateFilter} />
-        </div>
-      ),
-      onFilter: () => {},
+      title: 'Giá trị quy đổi',
+      dataIndex: 'conversedValue',
+      key: 'conversedValue',
+      align: 'right',
+      width: 150,
+      sorter: (a, b) => a.conversedValue - b.conversedValue,
+      render: (value) => {
+        return <span>{Intl.NumberFormat().format(value)}</span>
+      },
     },
     {
-      title: 'Người cập nhật gần nhất',
-      dataIndex: 'personUpdating',
-      key: 'personUpdating',
-      ...getColumnSearchProps('personUpdating'),
+      title: 'Giá trị vay khả dụng',
+      dataIndex: 'remainingValue',
+      key: 'remainingValue',
+      align: 'right',
+      width: 180,
+      sorter: (a, b) => a.remainingValue - b.remainingValue,
+      render: (value) => {
+        return <span>{Intl.NumberFormat().format(value)}</span>
+      },
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'state',
+      key: 'state',
+      align: 'center',
+      width: 110,
+      filters: [
+        {
+          text: 'Đang mở',
+          value: 'ongoing',
+        },
+        {
+          text: 'Đóng',
+          value: 'done',
+        },
+      ],
+      onFilter: (value, record) => record.state === value,
+      defaultFilteredValue: ['ongoing'],
+      render: (state) => (
+        <Tag color={state === 'done' ? 'green' : ''}>
+          {state === 'done' ? 'Đóng' : 'Đang mở'}
+        </Tag>
+      ),
     },
     {
       title: 'Hành động',
       align: 'center',
       key: 'action',
-      width: 100,
       hidden:
-        !checkRights('source', ['write']) &&
-        !checkRights('source', ['canDelete']),
+        !checkRights('loanContract', ['write']) &&
+        !checkRights('loanContract', ['canDelete']),
+      width: 100,
       fixed: 'right',
       render: (_) => (
-        <Space size="middle">
-          {checkRights('source', ['write']) && (
+        <Space size="small">
+          {checkRights('loanContract', ['write']) && (
             <Tooltip title="Chỉnh sửa">
               <Button
                 color="default"
@@ -487,7 +430,18 @@ const Source = () => {
               ></Button>
             </Tooltip>
           )}
-          {checkRights('source', ['canDelete']) && (
+          {_.state !== 'done' && checkRights('loanContract', ['write']) && (
+            <Tooltip title="Đánh dấu hoàn tất">
+              <Button
+                color="green"
+                variant="outlined"
+                size="small"
+                icon={<FaCheck />}
+                onClick={() => handleCheckDone(_)}
+              ></Button>
+            </Tooltip>
+          )}
+          {checkRights('loanContract', ['canDelete']) && (
             <Tooltip title="Xóa">
               <Button
                 color="danger"
@@ -504,13 +458,13 @@ const Source = () => {
   ]
 
   useEffect(() => {
-    if (currentSources.length > 0) setSources(currentSources)
+    if (currentLoanContracts.length > 0) setLoanContracts(currentLoanContracts)
   }, [])
 
   return (
     <>
       <Space.Compact>
-        {checkRights('source', ['create']) && (
+        {checkRights('loanContract', ['create']) && (
           <Button
             color="primary"
             onClick={() => showModal(true)}
@@ -530,37 +484,54 @@ const Source = () => {
         >
           Export
         </Button>
-        {checkRights('source', ['write']) ||
-          (checkRights('source', ['create']) && (
-            <div>
-              <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-                onChange={handleAddFile}
-              />
-              <Button
-                icon={<FaUpload />}
-                color="primary"
-                disabled={isProcessing}
-                onClick={() => {
-                  fileInputRef.current.click()
-                }}
-              >
-                Upload
-              </Button>
-            </div>
-          ))}
       </Space.Compact>
       <Table
         columns={columns}
+        expandable={{
+          expandedRowRender: (record) => (
+            <List
+              itemLayout="horizontal"
+              dataSource={record.respectiveIndentures}
+              renderItem={(item, index) => (
+                <List.Item>
+                  <List.Item.Meta
+                    avatar={<Avatar src={payImg} />}
+                    title={<span>{item.number}</span>}
+                    description={`Giá trị khế ước: ${item.amount
+                      .toString()
+                      .replace(
+                        /\B(?=(\d{3})+(?!\d))/g,
+                        ','
+                      )} ${item?.currency?.toUpperCase()} | Ngày đến hạn: ${moment(
+                      item.dueDate
+                    ).format('DD/MM/YYYY')} | Lãi suất: ${item.interestRate}%`}
+                  />
+                </List.Item>
+              )}
+            />
+          ),
+          rowExpandable: (record) => record.respectiveIndentures.length > 0,
+        }}
         dataSource={
-          checkRights('source', ['read'])
-            ? getFilteredSources().map((i) => {
+          checkRights('loanContract', ['read'])
+            ? getFilteredPaymentPlans().map((i) => {
+                let remainingValue = i.value
+                let respectiveIndentures = indentures.filter(
+                  (item) =>
+                    item.loanContractId?._id?.toString() === i._id.toString()
+                )
+
+                for (const indenture of respectiveIndentures) {
+                  remainingValue -= indenture.amount
+                }
                 return {
                   ...i,
+                  bank: i?.bankId?.name,
                   company: i?.companyId?.name,
-                  personUpdating: i?.updatedBy?.name,
+                  dueDate: moment(i?.dueDate).format('DD/MM/YYYY'),
+                  date: moment(i?.date).format('DD/MM/YYYY'),
+                  remainingValue,
+                  respectiveIndentures,
                 }
               })
             : []
@@ -581,19 +552,26 @@ const Source = () => {
           ),
         }}
         summary={(pageData) => {
+          let totalConversedValue = 0
           let totalValue = 0
+          let remainingAvailable = 0
 
-          pageData.forEach(({ value }) => {
+          pageData.forEach(({ conversedValue, value, remainingValue }) => {
+            totalConversedValue += conversedValue
             totalValue += value
+            remainingAvailable += remainingValue
           })
 
           return (
             <>
               <Table.Summary.Row style={{ background: '#FAFAFA' }}>
+                {Array.from({ length: 1 }).map((_, i) => (
+                  <Table.Summary.Cell key={i}></Table.Summary.Cell>
+                ))}
                 <Table.Summary.Cell>
                   <Text style={{ fontWeight: 600 }}>Tổng cộng</Text>
                 </Table.Summary.Cell>
-                {Array.from({ length: 3 }).map((_, i) => (
+                {Array.from({ length: 4 }).map((_, i) => (
                   <Table.Summary.Cell key={i}></Table.Summary.Cell>
                 ))}
                 <Table.Summary.Cell align="end">
@@ -604,7 +582,20 @@ const Source = () => {
                       : ''}
                   </Text>
                 </Table.Summary.Cell>
-                {Array.from({ length: 3 }).map((_, i) => (
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <Table.Summary.Cell key={i}></Table.Summary.Cell>
+                ))}
+                <Table.Summary.Cell align="end">
+                  <Text style={{ fontWeight: 600 }}>
+                    {Intl.NumberFormat().format(totalConversedValue)}
+                  </Text>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell align="end">
+                  <Text style={{ fontWeight: 600 }}>
+                    {Intl.NumberFormat().format(remainingAvailable)}
+                  </Text>
+                </Table.Summary.Cell>
+                {Array.from({ length: 2 }).map((_, i) => (
                   <Table.Summary.Cell key={i}></Table.Summary.Cell>
                 ))}
               </Table.Summary.Row>
@@ -613,13 +604,13 @@ const Source = () => {
         }}
       />
       {isModalOpen && (
-        <SourceCreateModal
+        <LoanContractCreateModal
           handleCancel={handleCancel}
           isModalOpen={isModalOpen}
-          handleFetchSources={handleFetchSources}
+          handleFetchLoanContracts={handleFetchLoanContracts}
         />
       )}
     </>
   )
 }
-export default Source
+export default LoanContract

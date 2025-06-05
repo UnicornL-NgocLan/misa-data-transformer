@@ -16,6 +16,7 @@ import PaymentPlan from './Outlets/PaymentPlan'
 import Source from './Outlets/Source'
 import BQCKCalculator from './BQCKCalculator'
 import Setting from './Outlets/Setting'
+import LoanContract from './Outlets/LoanContract'
 
 const Main = () => {
   const { auth, setAuth } = useZustand()
@@ -59,6 +60,7 @@ const Main = () => {
           <Route path="company" element={<Company />} />
           <Route path="bank" element={<Bank />} />
           <Route path="bank-account" element={<BankAccount />} />
+          <Route path="loan-contract" element={<LoanContract />} />
           <Route path="indenture" element={<Indenture />} />
           <Route path="payment-plan" element={<PaymentPlan />} />
           <Route path="source" element={<Source />} />
