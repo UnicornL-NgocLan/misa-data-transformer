@@ -67,7 +67,7 @@ router.patch(
 router.patch(
   '/update-payment-plan/:id',
   authenticate,
-  checkRights('paymnentPlan', ['write']),
+  checkRights('paymentPlan', ['write']),
   dataCtrl.updatePaymentPlan
 )
 router.patch(

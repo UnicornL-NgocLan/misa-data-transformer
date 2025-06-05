@@ -360,7 +360,6 @@ const PaymentPlanCreateModal = ({
           >
             <Select
               showSearch
-              disabled={!isModalOpen?._id}
               filterOption={(input, option) =>
                 (option?.label ?? '')
                   .toLowerCase()
