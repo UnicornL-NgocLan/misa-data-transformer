@@ -1,0 +1,16 @@
+services:
+  web:
+    build:
+      context: ../client
+    env_file:
+      - ../client/.env
+    depends_on:
+      - server
+    ports:
+      - 3010:3000
+
+  server:
+    build:
+      context: ../backend
+    env_file:
+      - ../backend/.env
