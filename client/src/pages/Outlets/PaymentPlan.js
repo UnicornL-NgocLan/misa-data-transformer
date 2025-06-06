@@ -583,6 +583,28 @@ const PaymentPlan = () => {
       ),
     },
     {
+      title: 'Ngày tạo',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      align: 'right',
+      sorter: (a, b) => {
+        return (
+          dayjs(a.createdAt, 'DD/MM/YYYY') - dayjs(b.createdAt, 'DD/MM/YYYY')
+        )
+      },
+    },
+    {
+      title: 'Ngày cập nhật gần nhất',
+      dataIndex: 'updatedAt',
+      key: 'updatedAt',
+      align: 'right',
+      sorter: (a, b) => {
+        return (
+          dayjs(a.updatedAt, 'DD/MM/YYYY') - dayjs(b.updatedAt, 'DD/MM/YYYY')
+        )
+      },
+    },
+    {
       title: 'Tr. thái thanh toán',
       dataIndex: 'state',
       key: 'state',
@@ -747,6 +769,8 @@ const PaymentPlan = () => {
                   ...i,
                   company: i?.companyId?.name,
                   dueDate: moment(i?.dueDate).format('DD/MM/YYYY'),
+                  updatedAt: moment(i?.updatedAt).format('DD/MM/YYYY HH:mm:ss'),
+                  createdAt: moment(i?.createdAt).format('DD/MM/YYYY HH:mm:ss'),
                 }
               })
             : []

@@ -530,27 +530,30 @@ const Source = () => {
         >
           Export
         </Button>
-        {checkRights('source', ['write']) ||
-          (checkRights('source', ['create']) && (
-            <div>
-              <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-                onChange={handleAddFile}
-              />
-              <Button
-                icon={<FaUpload />}
-                color="primary"
-                disabled={isProcessing}
-                onClick={() => {
-                  fileInputRef.current.click()
-                }}
-              >
-                Upload
-              </Button>
-            </div>
-          ))}
+
+        {!checkRights('source', ['read']) &&
+        !checkRights('source', ['write']) ? (
+          <></>
+        ) : (
+          <div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              onChange={handleAddFile}
+            />
+            <Button
+              icon={<FaUpload />}
+              color="primary"
+              disabled={isProcessing}
+              onClick={() => {
+                fileInputRef.current.click()
+              }}
+            >
+              Upload
+            </Button>
+          </div>
+        )}
       </Space.Compact>
       <Table
         columns={columns}
