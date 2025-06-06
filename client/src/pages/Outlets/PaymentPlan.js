@@ -342,7 +342,7 @@ const PaymentPlan = () => {
               subject,
               content,
               amount,
-              dueDate: new Date(myDueDate).setUTCHours(0, 0, 0, 0),
+              dueDate: new Date(myDueDate),
               companyId: newCompanyId._id,
               document,
               currency,
