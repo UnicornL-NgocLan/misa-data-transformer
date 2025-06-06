@@ -220,9 +220,22 @@ const PaymentPlan = () => {
     )
     worker.postMessage({
       data: paymentPlans.map((i) => {
+        const newDueDate = new Date(i.dueDate)
+        const newCreatedAt = new Date(i.createdAt)
+        const newUpdatedAt = new Date(i.updatedAt)
+
         let object = {
           ...i,
           companyId: i.companyId?.name,
+          dueDate: new Date(
+            newDueDate.setTime(newDueDate.getTime() + 7 * 60 * 60 * 1000)
+          ).toISOString(),
+          createdAt: new Date(
+            newCreatedAt.setTime(newCreatedAt.getTime() + 7 * 60 * 60 * 1000)
+          ).toISOString(),
+          updatedAt: new Date(
+            newUpdatedAt.setTime(newUpdatedAt.getTime() + 7 * 60 * 60 * 1000)
+          ).toISOString(),
         }
         delete object.__v
         return object
