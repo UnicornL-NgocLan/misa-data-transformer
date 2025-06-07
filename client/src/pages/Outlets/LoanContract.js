@@ -20,6 +20,7 @@ import { Avatar, List } from 'antd'
 import payImg from '../../images/pay.png'
 import { FaFileExport } from 'react-icons/fa'
 import * as FileSaver from 'file-saver'
+import { add7Hours } from '../../utils/plus7Hours'
 
 const { RangePicker } = DatePicker
 dayjs.extend(customParseFormat)
@@ -240,10 +241,16 @@ const LoanContract = () => {
     )
     worker.postMessage({
       data: loanContracts.map((i) => {
+        const newDate = add7Hours(i.date)
+        const newDueDate = add7Hours(i.dueDate)
         let object = {
           ...i,
           companyId: i.companyId?.name,
           bankId: i.bankId?.name,
+          date: newDate,
+          dueDate: newDueDate,
+          createdAt: add7Hours(i.createdAt),
+          updatedAt: add7Hours(i.updatedAt),
         }
         delete object.__v
         return object

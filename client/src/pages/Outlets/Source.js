@@ -25,6 +25,7 @@ import { validExcelFile } from '../../globalVariables'
 import useCheckRights from '../../utils/checkRights'
 import dayjs from 'dayjs'
 import _ from 'lodash'
+import { add7Hours } from '../../utils/plus7Hours'
 
 const { Text } = Typography
 const { RangePicker } = DatePicker
@@ -228,12 +229,12 @@ const Source = () => {
         let myObj = {
           ...i,
           companyId: i.companyId?.name,
+          updatedAt: add7Hours(i.updatedAt),
+          updatedBy: i.updatedBy?.name,
           bankAccountId:
             bankAccounts.find((item) => item._id === i.bankAccountId)
               ?.accountNumber || '',
         }
-        delete myObj.updatedAt
-        delete myObj.updatedBy
         return myObj
       }),
       fileName: 'Dữ liệu nguồn',

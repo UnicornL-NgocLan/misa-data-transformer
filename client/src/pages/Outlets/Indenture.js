@@ -12,6 +12,7 @@ import { MdEdit } from 'react-icons/md'
 import useCheckRights from '../../utils/checkRights'
 import { FaFileExport } from 'react-icons/fa'
 import * as FileSaver from 'file-saver'
+import { add7Hours } from '../../utils/plus7Hours'
 
 const Indenture = () => {
   const [indentures, setIndentures] = useState([])
@@ -170,6 +171,8 @@ const Indenture = () => {
           ...i,
           companyId: i.companyId?.name,
           bankId: i.bankId?.name,
+          date: add7Hours(i.date),
+          dueDate: add7Hours(i.dueDate),
           loanContractId: i.loanContractId?.name,
         }
         delete object.__v

@@ -20,6 +20,7 @@ import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 import isBetween from 'dayjs/plugin/isBetween'
 import useCheckRights from '../../utils/checkRights'
+import { add7Hours } from '../../utils/plus7Hours'
 const { RangePicker } = DatePicker
 dayjs.extend(customParseFormat)
 dayjs.extend(isBetween)
@@ -220,22 +221,16 @@ const PaymentPlan = () => {
     )
     worker.postMessage({
       data: paymentPlans.map((i) => {
-        const newDueDate = new Date(i.dueDate)
-        const newCreatedAt = new Date(i.createdAt)
-        const newUpdatedAt = new Date(i.updatedAt)
+        const newDueDate = add7Hours(i.dueDate)
+        const newCreatedAt = add7Hours(i.createdAt)
+        const newUpdatedAt = add7Hours(i.updatedAt)
 
         let object = {
           ...i,
           companyId: i.companyId?.name,
-          dueDate: new Date(
-            newDueDate.setTime(newDueDate.getTime() + 7 * 60 * 60 * 1000)
-          ).toISOString(),
-          createdAt: new Date(
-            newCreatedAt.setTime(newCreatedAt.getTime() + 7 * 60 * 60 * 1000)
-          ).toISOString(),
-          updatedAt: new Date(
-            newUpdatedAt.setTime(newUpdatedAt.getTime() + 7 * 60 * 60 * 1000)
-          ).toISOString(),
+          dueDate: newDueDate,
+          createdAt: newCreatedAt,
+          updatedAt: newUpdatedAt,
         }
         delete object.__v
         return object
