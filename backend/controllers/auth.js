@@ -89,10 +89,8 @@ const userCtrl = {
       })
 
       const user = await Users.findOne({ _id: id })
-      if (user && user.role === 'admin' && parameters?.active !== undefined)
-        return res
-          .status(400)
-          .json({ msg: 'Không được phép thay đổi trạng thái của admin' })
+      if (user && user.role === 'admin' && req.user.role !== 'admin')
+        return res.status(400).json({ msg: 'Không được phép tác động admin' })
       await Users.findOneAndUpdate({ _id: id }, { ...parameters })
       res.status(200).json({ msg: 'Thành công' })
     } catch (error) {
