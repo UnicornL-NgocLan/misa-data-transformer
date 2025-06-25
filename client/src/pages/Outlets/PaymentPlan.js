@@ -638,14 +638,14 @@ const PaymentPlan = () => {
     {
       title: 'Tr. thái hồ sơ',
       dataIndex: 'documentState',
-      key: 'state',
+      key: 'documentState',
       align: 'center',
       filters: [
         { value: 'holding', text: 'Đang giữ' },
         { value: 'return', text: 'Đã trả' },
         { value: 'not_return', text: 'Chưa trả' },
       ],
-      onFilter: (value, record) => record.state === value,
+      onFilter: (value, record) => record.documentState === value,
       render: (state) => (
         <Tag
           color={
