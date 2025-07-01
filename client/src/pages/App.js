@@ -18,10 +18,9 @@ import { IoDocument } from 'react-icons/io5'
 import { BsPiggyBankFill } from 'react-icons/bs'
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons'
 import { FaMoneyBill1Wave } from 'react-icons/fa6'
-import MisaLogo from '../images/logo-misa.png'
 import { IoSettings } from 'react-icons/io5'
-import CalculatorImg from '../images/calculator.png'
 import useCheckRights from '../utils/checkRights'
+import { FaTools } from 'react-icons/fa'
 const { Header, Content, Sider } = Layout
 
 const siderStyle = {
@@ -147,6 +146,14 @@ const App = () => {
       },
     },
     {
+      key: 7.5,
+      icon: <FaTools />,
+      label: 'Tiện ích',
+      onClick: () => {
+        handleNavigate('/tool', 7.5)
+      },
+    },
+    {
       key: 8,
       icon: <IoSettings />,
       label: 'Cài đặt quyền',
@@ -212,14 +219,6 @@ const App = () => {
     } finally {
       setIsFetching(false)
     }
-  }
-
-  const handleClickToMisaDataTransformer = () => {
-    window.open('/misa-data-transformer', '_blank')
-  }
-
-  const handleClickToBQCKCalculator = () => {
-    window.open('/bqck-calculator', '_blank')
   }
 
   const items = [
@@ -289,24 +288,6 @@ const App = () => {
                 height: 64,
               }}
             />
-            <Button
-              style={{ display: 'flex', alignItems: 'center' }}
-              color="default"
-              variant="outlined"
-              onClick={handleClickToMisaDataTransformer}
-            >
-              <span>Xuất file import vào MISA</span>
-              <img src={MisaLogo} alt="" style={{ width: 20 }} />
-            </Button>
-            <Button
-              style={{ display: 'flex', alignItems: 'center' }}
-              color="default"
-              variant="outlined"
-              onClick={handleClickToBQCKCalculator}
-            >
-              <span>Tính giá xuất kho BQCK</span>
-              <img src={CalculatorImg} alt="" style={{ width: 15 }} />
-            </Button>
           </Space>
           {isModalOpen && (
             <ChangePasswordModal
