@@ -346,15 +346,7 @@ const dataCtrl = {
 
   createSource: async (req, res) => {
     try {
-      const {
-        companyId,
-        name,
-        type,
-        bankAccountId,
-        value,
-        currency,
-        valueForecasted,
-      } = req.body
+      const { companyId, name, type, bankAccountId, value, currency } = req.body
       if (
         !type ||
         !companyId ||
@@ -375,7 +367,6 @@ const dataCtrl = {
         value,
         currency,
         updatedBy: req.user._id,
-        valueForecasted,
       })
 
       res.status(200).json({ msg: 'Đã tạo hoàn tất nguồn' })
@@ -424,7 +415,7 @@ const dataCtrl = {
         companyId: { $in: req.user.companyIds },
       })
         .select(
-          'companyId name type bankAccountId value updatedBy currency updatedAt valueForecasted'
+          'companyId name type bankAccountId value updatedBy currency updatedAt'
         )
         .populate('companyId updatedBy', 'name')
       res.status(200).json({ data: list })

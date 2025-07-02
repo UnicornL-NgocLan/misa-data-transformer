@@ -283,7 +283,7 @@ const Source = () => {
           const allCompaniesValid = data.every(
             (i) =>
               companies.find((item) => item.name === i.companyId) &&
-              ['cash', 'bank'].find((o) => o === i.type) &&
+              ['cash', 'bank', 'incomming'].find((o) => o === i.type) &&
               ['vnd', 'usd', 'cny', 'thb'].find((e) => e === i.currency)
           )
 
@@ -305,7 +305,6 @@ const Source = () => {
               value,
               name,
               bankAccountId,
-              valueForecasted,
             } = i
             const newCompanyId = companies.find(
               (item) => item.name === companyId
@@ -338,7 +337,6 @@ const Source = () => {
               value,
               name,
               bankAccountId: newBankAccountId?._id,
-              valueForecasted,
             }
 
             return _id
@@ -401,11 +399,19 @@ const Source = () => {
           text: 'Ngân hàng',
           value: 'bank',
         },
+        {
+          text: 'Dự thu',
+          value: 'incomming',
+        },
       ],
       onFilter: (value, record) => record.type === value,
       render: (state) => (
-        <Tag color={state === 'cash' ? 'green' : 'red'}>
-          {state === 'cash' ? 'Tiền mặt' : 'Ngân hàng'}
+        <Tag color={state === 'cash' ? 'green' : state === 'bank' ? 'red' : ''}>
+          {state === 'cash'
+            ? 'Tiền mặt'
+            : state === 'bank'
+            ? 'Ngân hàng'
+            : 'Dự thu'}
         </Tag>
       ),
     },
@@ -444,16 +450,6 @@ const Source = () => {
       sorter: (a, b) => a.value - b.value,
       render: (value) => {
         return <span>{Intl.NumberFormat().format(value)}</span>
-      },
-    },
-    {
-      title: 'Số dư dự kiến',
-      dataIndex: 'valueForecasted',
-      key: 'valueForecasted',
-      align: 'right',
-      sorter: (a, b) => a.valueForecasted - b.valueForecasted,
-      render: (valueForecasted) => {
-        return <span>{Intl.NumberFormat().format(valueForecasted)}</span>
       },
     },
     {
