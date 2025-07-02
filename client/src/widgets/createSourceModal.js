@@ -18,8 +18,15 @@ const SourceCreateModal = ({
   const handleOk = async () => {
     try {
       if (loading) return
-      const { type, name, value, currency, bankAccountId, companyId } =
-        form.getFieldsValue()
+      const {
+        type,
+        name,
+        value,
+        currency,
+        bankAccountId,
+        companyId,
+        valueForecasted,
+      } = form.getFieldsValue()
       if (
         !type ||
         !companyId ||
@@ -38,6 +45,7 @@ const SourceCreateModal = ({
           currency,
           bankAccountId,
           companyId,
+          valueForecasted,
         })
       } else {
         await app.post('/api/create-source', {
@@ -47,6 +55,7 @@ const SourceCreateModal = ({
           currency,
           bankAccountId,
           companyId,
+          valueForecasted,
         })
       }
       await handleFetchSources()
@@ -71,6 +80,7 @@ const SourceCreateModal = ({
       form.setFieldValue('bankAccountId', isModalOpen?.bankAccountId)
       form.setFieldValue('value', isModalOpen?.value)
       form.setFieldValue('currency', isModalOpen?.currency)
+      form.setFieldValue('valueForecasted', isModalOpen?.valueForecasted)
     } else {
       form.setFieldValue('type', 'cash')
     }
@@ -186,7 +196,28 @@ const SourceCreateModal = ({
           </Form.Item>
         )}
         <Space.Compact style={{ display: 'flex' }}>
-          <Form.Item name="value" label="Giá trị" style={{ flex: 2 }}>
+          <Form.Item name="value" label="Giá trị" style={{ flex: 1 }}>
+            <InputNumber
+              inputMode="decimal"
+              style={{ width: '100%' }}
+              formatter={(value) =>
+                value
+                  ? value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') // thousands with comma
+                  : ''
+              }
+              parser={(value) =>
+                value
+                  ? parseFloat(value.toString().replace(/,/g, '')) // remove commas
+                  : 0
+              }
+              min={0}
+            />
+          </Form.Item>
+          <Form.Item
+            name="valueForecasted"
+            label="Giá trị dự kiến"
+            style={{ flex: 1 }}
+          >
             <InputNumber
               inputMode="decimal"
               style={{ width: '100%' }}

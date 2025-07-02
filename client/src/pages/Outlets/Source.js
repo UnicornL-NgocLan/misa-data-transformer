@@ -305,6 +305,7 @@ const Source = () => {
               value,
               name,
               bankAccountId,
+              valueForecasted,
             } = i
             const newCompanyId = companies.find(
               (item) => item.name === companyId
@@ -337,6 +338,7 @@ const Source = () => {
               value,
               name,
               bankAccountId: newBankAccountId?._id,
+              valueForecasted,
             }
 
             return _id
@@ -442,6 +444,16 @@ const Source = () => {
       sorter: (a, b) => a.value - b.value,
       render: (value) => {
         return <span>{Intl.NumberFormat().format(value)}</span>
+      },
+    },
+    {
+      title: 'Số dư dự kiến',
+      dataIndex: 'valueForecasted',
+      key: 'valueForecasted',
+      align: 'right',
+      sorter: (a, b) => a.valueForecasted - b.valueForecasted,
+      render: (valueForecasted) => {
+        return <span>{Intl.NumberFormat().format(valueForecasted)}</span>
       },
     },
     {

@@ -14,6 +14,7 @@ const SourceSchema = mongoose.Schema(
       ref: 'BankAccount',
     },
     value: Number,
+    valueForecasted: Number,
     currency: String,
     updatedBy: {
       type: mongoose.Types.ObjectId,
