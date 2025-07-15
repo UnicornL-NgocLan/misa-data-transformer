@@ -5,11 +5,21 @@ const Indentures = require('../models/indenture')
 const PaymentPlans = require('../models/paymentPlan')
 const Sources = require('../models/source')
 const LoanContracts = require('../models/loanContract')
+const InterCompanyFinances = require('../models/interCompanyFinance')
+const CompanyTypes = require('../models/companyType')
 
 const dataCtrl = {
   createCompany: async (req, res) => {
     try {
-      const { name } = req.body
+      const {
+        name,
+        chartelCapital,
+        taxCode,
+        attachmentUrl,
+        parentId,
+        companyType,
+        shortname,
+      } = req.body
       if (!name.trim())
         return res
           .status(400)
@@ -20,6 +30,12 @@ const dataCtrl = {
 
       await Companies.create({
         name,
+        chartelCapital: chartelCapital || 0,
+        taxCode: taxCode || '',
+        attachmentUrl: attachmentUrl || '',
+        parentId,
+        companyType,
+        shortname,
       })
 
       res.status(200).json({ msg: 'Đã tạo hoàn tất công ty' })
@@ -28,10 +44,84 @@ const dataCtrl = {
     }
   },
 
+  createCompanyType: async (req, res) => {
+    try {
+      const { name } = req.body
+      if (!name.trim())
+        return res
+          .status(400)
+          .json({ msg: 'Vui lòng cung cấp đầy đủ thông tin' })
+      const existingRecord = await CompanyTypes.findOne({ name })
+      if (existingRecord)
+        return res.status(400).json({ msg: 'Loại công ty đã tồn tại' })
+
+      await CompanyTypes.create({
+        name,
+      })
+
+      res.status(200).json({ msg: 'Đã tạo hoàn tất loại công ty' })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
   getCompanies: async (req, res) => {
     try {
-      const companies = await Companies.find({}).select('name active')
+      const companies = await Companies.find({}).populate(
+        'companyType parentId'
+      )
       res.status(200).json({ data: companies })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  getCompanyTypes: async (req, res) => {
+    try {
+      const companyTypes = await CompanyTypes.find({}).select('name')
+      res.status(200).json({ data: companyTypes })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  updateCompanyType: async (req, res) => {
+    try {
+      let parameters = { ...req.body }
+      const { id } = req.params
+      Object.keys(parameters).forEach((key) => {
+        if (parameters[key] === null) {
+          delete parameters[key]
+        }
+      })
+      const newOne = await CompanyTypes.findOneAndUpdate(
+        { _id: id },
+        { ...parameters },
+        { new: true }
+      )
+      if (!newOne)
+        return res
+          .status(400)
+          .json({ msg: 'Loại công ty không có trong cơ sở dữ liệu' })
+      res.status(200).json({ msg: 'Đã cập nhật thành công' })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  deleteCompanyType: async (req, res) => {
+    try {
+      const { id } = req.params
+      await CompanyTypes.findOneAndDelete({ _id: id })
+      await Companies.updateMany(
+        {
+          companyType: id,
+        },
+        {
+          companyType: undefined,
+        }
+      )
+      res.status(200).json({ msg: 'Đã xóa thành công' })
     } catch (error) {
       res.status(500).json({ msg: error.message })
     }
@@ -117,11 +207,7 @@ const dataCtrl = {
     try {
       let parameters = { ...req.body }
       const { id } = req.params
-      Object.keys(parameters).forEach((key) => {
-        if (parameters[key] === null) {
-          delete parameters[key]
-        }
-      })
+
       const newOne = await Indentures.findOneAndUpdate(
         { _id: id, companyId: { $in: req.user.companyIds } },
         { ...parameters },
@@ -168,6 +254,26 @@ const dataCtrl = {
         return res
           .status(400)
           .json({ msg: 'Ngân hàng không có trong cơ sở dữ liệu' })
+      res.status(200).json({ msg: 'Đã cập nhật thành công' })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  updateCompany: async (req, res) => {
+    try {
+      let parameters = { ...req.body }
+      const { id } = req.params
+
+      const newOne = await Companies.findOneAndUpdate(
+        { _id: id },
+        { ...parameters },
+        { new: true }
+      )
+      if (!newOne)
+        return res
+          .status(400)
+          .json({ msg: 'Công ty không có trong cơ sở dữ liệu' })
       res.status(200).json({ msg: 'Đã cập nhật thành công' })
     } catch (error) {
       res.status(500).json({ msg: error.message })
@@ -516,6 +622,103 @@ const dataCtrl = {
           loanContractId: undefined,
         }
       )
+      res.status(200).json({ msg: 'Đã xóa thành công' })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  createInterCompanyFinance: async (req, res) => {
+    try {
+      const {
+        subjectCompanyId,
+        counterpartCompanyId,
+        value,
+        activityGroup,
+        type,
+      } = req.body
+      if (
+        !subjectCompanyId ||
+        !counterpartCompanyId ||
+        !value ||
+        !activityGroup ||
+        !type
+      )
+        return res
+          .status(400)
+          .json({ msg: 'Vui lòng cung cấp đầy đủ thông tin' })
+      if (subjectCompanyId === counterpartCompanyId)
+        return res
+          .status(400)
+          .json({ msg: 'Công ty chủ thể và đối tác không thể trùng nhau' })
+      const existingRecord = await InterCompanyFinances.findOne({
+        subjectCompanyId,
+        counterpartCompanyId,
+        type,
+        activityGroup,
+      })
+      if (existingRecord)
+        return res
+          .status(400)
+          .json({
+            msg: 'Đã có tồn tại dữ liệu ghi nhận công nợ liên quan 2 công ty đó và loại, nhóm hoạt động',
+          })
+      await InterCompanyFinances.create({
+        subjectCompanyId,
+        counterpartCompanyId,
+        value,
+        type,
+        activityGroup,
+        lastUpdatedBy: req.user._id,
+      })
+
+      res.status(200).json({ msg: 'Đã tạo hoàn tất giao dịch liên công ty' })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  updateInterCompanyFinance: async (req, res) => {
+    try {
+      let parameters = { ...req.body }
+      const { id } = req.params
+      Object.keys(parameters).forEach((key) => {
+        if (parameters[key] === null) {
+          delete parameters[key]
+        }
+      })
+      const newOne = await InterCompanyFinances.findOneAndUpdate(
+        { _id: id },
+        { ...parameters, lastUpdatedBy: req.user._id },
+        { new: true }
+      )
+      if (!newOne)
+        return res
+          .status(400)
+          .json({ msg: 'Giao dịch liên công ty không có trong cơ sở dữ liệu' })
+      res.status(200).json({ msg: 'Đã cập nhật thành công' })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  getInterCompanyFinance: async (req, res) => {
+    try {
+      const interCompanyFinances = await InterCompanyFinances.find({
+        subjectCompanyId: { $in: req.user.companyIds },
+      })
+        .populate('lastUpdatedBy', 'name')
+        .populate('counterpartCompanyId subjectCompanyId', 'name shortname')
+      res.status(200).json({ data: interCompanyFinances })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  deleteInterCompanyFinance: async (req, res) => {
+    try {
+      const { id } = req.params
+      await InterCompanyFinances.findOneAndDelete({ _id: id })
       res.status(200).json({ msg: 'Đã xóa thành công' })
     } catch (error) {
       res.status(500).json({ msg: error.message })

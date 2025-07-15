@@ -10,6 +10,8 @@ import { sysmtemUserRole } from '../../globalVariables'
 import CreateUserModal from '../../widgets/createUserModal'
 import { FiPlus } from 'react-icons/fi'
 import useCheckRights from '../../utils/checkRights'
+import { MdEdit } from 'react-icons/md'
+import { Tooltip } from 'antd'
 
 const User = () => {
   const { auth } = useZustand()
@@ -254,14 +256,15 @@ const User = () => {
       key: 'action',
       render: (_) => (
         <Space size="middle">
-          <Button
-            color="default"
-            variant="outlined"
-            size="small"
-            onClick={() => showModal(_)}
-          >
-            Chỉnh quyền
-          </Button>
+          <Tooltip title="Chỉnh quyền">
+            <Button
+              color="default"
+              variant="outlined"
+              size="small"
+              icon={<MdEdit />}
+              onClick={() => showModal(_)}
+            ></Button>
+          </Tooltip>
           {_.active ? (
             <Button
               color="danger"

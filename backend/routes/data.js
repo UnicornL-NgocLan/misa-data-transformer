@@ -45,6 +45,18 @@ router.post(
   checkRights('loanContract', ['create']),
   dataCtrl.createLoanContract
 )
+router.post(
+  '/create-inter-company-finance',
+  authenticate,
+  checkRights('interCompanyFinance', ['create']),
+  dataCtrl.createInterCompanyFinance
+)
+router.post(
+  '/create-company-type',
+  authenticate,
+  checkRights('companyType', ['create']),
+  dataCtrl.createCompanyType
+)
 
 router.patch(
   '/update-bank/:id',
@@ -82,6 +94,24 @@ router.patch(
   checkRights('loanContract', ['write']),
   dataCtrl.updateLoanContract
 )
+router.patch(
+  '/update-inter-company-finance/:id',
+  authenticate,
+  checkRights('interCompanyFinance', ['write']),
+  dataCtrl.updateInterCompanyFinance
+)
+router.patch(
+  '/update-company/:id',
+  authenticate,
+  checkRights('company', ['write']),
+  dataCtrl.updateCompany
+)
+router.patch(
+  '/update-company-type/:id',
+  authenticate,
+  checkRights('companyType', ['write']),
+  dataCtrl.updateCompanyType
+)
 
 router.get('/get-companies', authenticate, dataCtrl.getCompanies)
 router.get('/get-banks', authenticate, dataCtrl.getBanks)
@@ -90,6 +120,12 @@ router.get('/get-indentures', authenticate, dataCtrl.getIndentures)
 router.get('/get-payment-plans', authenticate, dataCtrl.getPaymentPlans)
 router.get('/get-sources', authenticate, dataCtrl.getSources)
 router.get('/get-loan-contracts', authenticate, dataCtrl.getLoanContract)
+router.get(
+  '/get-inter-company-finances',
+  authenticate,
+  dataCtrl.getInterCompanyFinance
+)
+router.get('/get-company-types', authenticate, dataCtrl.getCompanyTypes)
 
 router.delete(
   '/delete-source/:id',
@@ -108,6 +144,18 @@ router.delete(
   authenticate,
   checkRights('loanContract', ['canDelete']),
   dataCtrl.deleteLoanContract
+)
+router.delete(
+  '/delete-inter-company-finance/:id',
+  authenticate,
+  checkRights('interCompanyFinance', ['canDelete']),
+  dataCtrl.deleteInterCompanyFinance
+)
+router.delete(
+  '/delete-company-type/:id',
+  authenticate,
+  checkRights('companyType', ['canDelete']),
+  dataCtrl.deleteCompanyType
 )
 
 module.exports = router

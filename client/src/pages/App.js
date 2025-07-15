@@ -9,6 +9,7 @@ import { FaCaretDown } from 'react-icons/fa'
 import { FaHandshakeSimple } from 'react-icons/fa6'
 import app from '../axiosConfig'
 import ChangePasswordModal from '../widgets/changePasswordModal'
+import { GrTransaction } from 'react-icons/gr'
 import { Outlet, useNavigate } from 'react-router'
 import Loading from '../widgets/loading'
 import { FaRegUser } from 'react-icons/fa6'
@@ -48,6 +49,8 @@ const App = () => {
     setRightsState,
     setAccessGroupState,
     setLoanContractState,
+    setInterCompanyFinanceState,
+    setCompanyTypeState,
   } = useZustand()
   const [loading, setLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -137,12 +140,12 @@ const App = () => {
       },
     },
     {
-      key: 7,
-      icon: <FaMoneyBill1Wave />,
-      label: 'Nguồn',
-      disabled: !checkRights('source', ['read']),
+      key: 7.2,
+      icon: <GrTransaction />,
+      label: 'Hệ thống công nợ',
+      disabled: !checkRights('interCompanyFinance', ['read']),
       onClick: () => {
-        handleNavigate('/source', 7)
+        handleNavigate('/inter-company-finance', 7.2)
       },
     },
     {
@@ -201,6 +204,8 @@ const App = () => {
         app.get('/api/get-rights'),
         app.get('/api/get-access-groups'),
         app.get('/api/get-loan-contracts'),
+        app.get('/api/get-inter-company-finances'),
+        app.get('/api/get-company-types'),
       ])
 
       setUserState(result[0]?.data?.data)
@@ -214,6 +219,8 @@ const App = () => {
       setRightsState(result[8]?.data?.data)
       setAccessGroupState(result[9]?.data?.data)
       setLoanContractState(result[10]?.data?.data)
+      setInterCompanyFinanceState(result[11]?.data?.data)
+      setCompanyTypeState(result[12]?.data?.data)
     } catch (error) {
       alert(error?.response?.data?.msg || error)
     } finally {

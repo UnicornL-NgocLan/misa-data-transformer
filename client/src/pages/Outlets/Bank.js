@@ -7,6 +7,8 @@ import { Input } from 'antd'
 import Highlighter from 'react-highlight-words'
 import { SearchOutlined } from '@ant-design/icons'
 import app from '../../axiosConfig'
+import { MdEdit } from 'react-icons/md'
+import { Tooltip } from 'antd'
 import useCheckRights from '../../utils/checkRights'
 
 const Bank = () => {
@@ -206,14 +208,15 @@ const Bank = () => {
       hidden: !checkRights('bank', ['write']),
       render: (_) => (
         <Space size="middle">
-          <Button
-            color="default"
-            variant="outlined"
-            size="small"
-            onClick={() => showModal(_)}
-          >
-            Chỉnh sửa
-          </Button>
+          <Tooltip title="Chỉnh sửa">
+            <Button
+              color="default"
+              variant="outlined"
+              size="small"
+              icon={<MdEdit />}
+              onClick={() => showModal(_)}
+            ></Button>
+          </Tooltip>
           {_.active ? (
             <Button
               color="danger"

@@ -18,6 +18,7 @@ import BQCKCalculator from './BQCKCalculator'
 import Setting from './Outlets/Setting'
 import LoanContract from './Outlets/LoanContract'
 import Tool from './Outlets/Tool'
+import InterCompanyFinance from './Outlets/InterCompanyFinance'
 
 const Main = () => {
   const { auth, setAuth } = useZustand()
@@ -67,6 +68,10 @@ const Main = () => {
           <Route path="source" element={<Source />} />
           <Route path="tool" element={<Tool />} />
           <Route path="setting" element={<Setting />} />
+          <Route
+            path="inter-company-finance"
+            element={<InterCompanyFinance />}
+          />
         </Route>
         <Route
           path="/login"

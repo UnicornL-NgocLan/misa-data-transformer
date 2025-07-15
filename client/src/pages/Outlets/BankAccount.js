@@ -2,18 +2,18 @@ import { useState, useEffect, useRef } from 'react'
 import { Table, Tag, Button, Space } from 'antd'
 import { useZustand } from '../../zustand'
 import { FiPlus } from 'react-icons/fi'
-import BankCreateModal from '../../widgets/createBankModal'
+import { MdEdit } from 'react-icons/md'
+import { Tooltip } from 'antd'
 import { Input } from 'antd'
 import Highlighter from 'react-highlight-words'
 import { SearchOutlined } from '@ant-design/icons'
 import app from '../../axiosConfig'
-import { sysmtemUserRole } from '../../globalVariables'
 import BankAccountCreateModal from '../../widgets/createBankAccountModal'
 import useCheckRights from '../../utils/checkRights'
 
 const BankAccount = () => {
   const [bankAccs, setBankAccs] = useState([])
-  const { bankAccounts, auth, setBankAccountState } = useZustand()
+  const { bankAccounts, setBankAccountState } = useZustand()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [searchedColumn, setSearchedColumn] = useState('')
@@ -249,14 +249,15 @@ const BankAccount = () => {
       hidden: !checkRights('bankAccount', ['write']),
       render: (_) => (
         <Space size="middle">
-          <Button
-            color="default"
-            variant="outlined"
-            size="small"
-            onClick={() => showModal(_)}
-          >
-            Chỉnh sửa
-          </Button>
+          <Tooltip title="Chỉnh sửa">
+            <Button
+              color="default"
+              variant="outlined"
+              size="small"
+              icon={<MdEdit />}
+              onClick={() => showModal(_)}
+            ></Button>
+          </Tooltip>
           <div>
             {_.active ? (
               <Button

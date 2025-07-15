@@ -102,6 +102,7 @@ const IndentureCreateModal = ({
 
   useEffect(() => {
     if (isModalOpen?._id) {
+      console.log('isModalOpen', isModalOpen)
       form.setFieldValue('number', isModalOpen?.number)
       form.setFieldValue('bankId', isModalOpen?.bankId?._id)
       form.setFieldValue('amount', isModalOpen?.amount)
@@ -111,13 +112,13 @@ const IndentureCreateModal = ({
       form.setFieldValue('interestAmount', isModalOpen?.interestAmount)
       form.setFieldValue('residual', isModalOpen?.residual)
       form.setFieldValue('state', isModalOpen?.state)
-      form.setFieldValue('currrency', isModalOpen?.currrency)
+      form.setFieldValue('currency', isModalOpen?.currency)
       form.setFieldValue('exchangeRate', isModalOpen?.exchangeRate)
       form.setFieldValue('loanContractId', isModalOpen?.loanContractId?._id)
       form.setFieldValue('companyId', isModalOpen?.companyId?._id)
     } else {
       form.setFieldValue('interestRate', 0)
-      form.setFieldValue('currrency', 'vnd')
+      form.setFieldValue('currency', 'vnd')
       form.setFieldValue('exchangeRate', 1)
       form.setFieldValue('state', 'ongoing')
     }
