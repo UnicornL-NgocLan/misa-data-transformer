@@ -25,6 +25,7 @@ const InterCompanyFinance = () => {
     interCompanyFinances: currentInterCompanyFinances,
     setInterCompanyFinanceState,
     companies,
+    auth,
   } = useZustand()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
@@ -34,8 +35,6 @@ const InterCompanyFinance = () => {
   const searchInput = useRef(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const checkRights = useCheckRights()
-
-  const { Text } = Typography
 
   const showModal = (user) => {
     setIsModalOpen(user)
@@ -180,11 +179,14 @@ const InterCompanyFinance = () => {
       data: interCompanyFinances.map((i) => {
         let object = {
           ...i,
-          subjectCompanyId: i.subjectCompanyId?.name,
-          counterpartCompanyId: i.counterpartCompanyId?.name,
+          subjectCompanyId: i.subjectCompanyId?.taxCode,
+          counterpartCompanyId: i.counterpartCompanyId?.taxCode,
           lastUpdatedBy: i.lastUpdatedBy?.name,
           updatedAt: add7Hours(i.updatedAt),
           createdAt: add7Hours(i.createdAt),
+          date: add7Hours(i.date),
+          subjectCompanyName: i.subjectCompanyId?.name,
+          counterpartCompanyName: i.counterpartCompanyId?.name,
         }
         delete object.__v
         return object
@@ -252,8 +254,15 @@ const InterCompanyFinance = () => {
         if (success) {
           const allValueValid = data.every(
             (i) =>
-              companies.find((item) => item.name === i.subjectCompanyId) &&
-              companies.find((item) => item.name === i.counterpartCompanyId) &&
+              companies.find(
+                (item) =>
+                  i.subjectCompanyId && item.taxCode === i.subjectCompanyId
+              ) &&
+              companies.find(
+                (item) =>
+                  i.counterpartCompanyId &&
+                  item.taxCode === i.counterpartCompanyId
+              ) &&
               ['payable', 'receivable'].find((e) => e === i.type) &&
               ['business', 'finance', 'invest', 'others'].find(
                 (e) => e === i.activityGroup
@@ -266,7 +275,7 @@ const InterCompanyFinance = () => {
             setIsProcessing(false)
             worker.terminate()
             return alert(
-              'Kiểm tra lại công ty, loại, id và đơn vị tiền tệ xem có tồn tại trong hệ thống không?'
+              'Kiểm tra lại mã số thuế công ty, loại, id, nhóm hoạt động xem có tồn tại trong hệ thống không?v'
             )
           }
 
@@ -274,22 +283,29 @@ const InterCompanyFinance = () => {
             const {
               subjectCompanyId,
               counterpartCompanyId,
-              value,
+              debit,
+              credit,
               type,
               activityGroup,
+              date,
+              account,
             } = i
             const newSubjectCompanyId = companies.find(
-              (item) => item.name === subjectCompanyId
+              (item) => item.taxCode === subjectCompanyId
             )
             const newCounterpartCompanyId = companies.find(
-              (item) => item.name === counterpartCompanyId
+              (item) => item.taxCode === counterpartCompanyId
             )
+
+            const valueInValid = debit < 0 || credit < 0
             if (
+              valueInValid ||
               !newSubjectCompanyId ||
               !newCounterpartCompanyId ||
-              !value ||
               !type ||
-              !activityGroup
+              !activityGroup ||
+              !date ||
+              !account
             ) {
               fileInputRef.current.value = ''
               setIsProcessing(false)
@@ -300,9 +316,12 @@ const InterCompanyFinance = () => {
             const processedData = {
               subjectCompanyId: newSubjectCompanyId._id,
               counterpartCompanyId: newCounterpartCompanyId._id,
-              value: value,
+              debit,
+              credit,
               type,
               activityGroup,
+              date,
+              account,
             }
 
             return i._id
@@ -312,9 +331,12 @@ const InterCompanyFinance = () => {
                 )
               : app.post('/api/create-inter-company-finance', processedData)
           })
-
-          await Promise.all(myMapList)
-          await handleFetchInterCompanyFinances()
+          try {
+            await Promise.all(myMapList)
+            await handleFetchInterCompanyFinances()
+          } catch (error) {
+            alert(error?.response?.data?.msg)
+          }
           setIsProcessing(false)
         } else {
           alert('Lỗi xử lý file: ' + error)
@@ -340,6 +362,15 @@ const InterCompanyFinance = () => {
 
   const columns = [
     {
+      title: 'Ngày',
+      dataIndex: 'date',
+      key: 'date',
+      align: 'right',
+      sorter: (a, b) => moment(a.date) - moment(b.date),
+      width: 100,
+      render: (value) => <span>{moment(value).format('DD/MM/YYYY')}</span>,
+    },
+    {
       title: 'Công ty chủ thể',
       dataIndex: 'company',
       key: 'company',
@@ -352,6 +383,13 @@ const InterCompanyFinance = () => {
       key: 'counterpartCompany',
       width: 350,
       ...getColumnSearchProps('counterpartCompany'),
+    },
+    {
+      title: 'Tài khoản',
+      dataIndex: 'account',
+      key: 'account',
+      width: 100,
+      ...getColumnSearchProps('account'),
     },
     {
       title: 'Loại',
@@ -414,12 +452,34 @@ const InterCompanyFinance = () => {
       ),
     },
     {
-      title: 'Số dư công nợ (VND)',
-      dataIndex: 'value',
-      key: 'value',
+      title: 'Nợ (VND)',
+      dataIndex: 'debit',
+      key: 'debit',
       align: 'right',
-      sorter: (a, b) => a.value - b.value,
-      width: 200,
+      sorter: (a, b) => a.debit - b.debit,
+      width: 120,
+      render: (value) => {
+        return <span>{Intl.NumberFormat().format(value)}</span>
+      },
+    },
+    {
+      title: 'Có (VND)',
+      dataIndex: 'credit',
+      key: 'credit',
+      align: 'right',
+      sorter: (a, b) => a.credit - b.credit,
+      width: 120,
+      render: (value) => {
+        return <span>{Intl.NumberFormat().format(value)}</span>
+      },
+    },
+    {
+      title: 'Số dư (VND)',
+      dataIndex: 'balance',
+      key: 'balance',
+      align: 'right',
+      sorter: (a, b) => a.balance - b.balance,
+      width: 120,
       render: (value) => {
         return <span>{Intl.NumberFormat().format(value)}</span>
       },
@@ -493,6 +553,7 @@ const InterCompanyFinance = () => {
           const id = String(i + 1)
           return {
             key: id,
+            disabled: id === '2' && auth.role === 'basic',
             label: `${id === '1' ? 'Hệ thống công nợ' : 'Biểu đồ trực quan'}`,
             children:
               id === '1' ? (
@@ -549,6 +610,7 @@ const InterCompanyFinance = () => {
                         ? [...interCompanyFinances].map((i) => {
                             return {
                               ...i,
+                              balance: i.debit - i.credit,
                               company: i.subjectCompanyId?.name,
                               counterpartCompany: i.counterpartCompanyId?.name,
                               lastUpdatedBy: i.lastUpdatedBy?.name,
@@ -570,39 +632,6 @@ const InterCompanyFinance = () => {
                           {range[0]}-{range[1]} / {total}
                         </span>
                       ),
-                    }}
-                    summary={(pageData) => {
-                      let totalAmount = 0
-
-                      pageData.forEach(({ value }) => {
-                        totalAmount += value
-                      })
-
-                      return (
-                        <>
-                          <Table.Summary.Row style={{ background: '#FAFAFA' }}>
-                            <Table.Summary.Cell>
-                              <Text style={{ fontWeight: 600 }}>Tổng cộng</Text>
-                            </Table.Summary.Cell>
-                            {Array.from({ length: 3 }).map((_, i) => (
-                              <Table.Summary.Cell key={i}></Table.Summary.Cell>
-                            ))}
-                            <Table.Summary.Cell align="end">
-                              <Text style={{ fontWeight: 600 }}>
-                                {pageData.length > 0 &&
-                                pageData.every(
-                                  (i) => i.currency === pageData[0].currency
-                                )
-                                  ? Intl.NumberFormat().format(totalAmount)
-                                  : ''}
-                              </Text>
-                            </Table.Summary.Cell>
-                            {Array.from({ length: 2 }).map((_, i) => (
-                              <Table.Summary.Cell key={i}></Table.Summary.Cell>
-                            ))}
-                          </Table.Summary.Row>
-                        </>
-                      )
                     }}
                   />
                   {isModalOpen && (

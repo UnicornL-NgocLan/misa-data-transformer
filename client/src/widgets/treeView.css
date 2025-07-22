@@ -1,0 +1,46 @@
+.node-template {
+    text-align: center;
+}
+
+.node-template strong {
+    display: flex;
+    background-color: rgba(0, 0, 0, 0.1);
+    padding: 0.25em;
+    justify-content: center;
+}
+
+.node-template span {
+    display: flex;
+    padding: 0.25em;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.hierarchy-viewer {
+    display: block;
+    margin: 20px;
+    padding: 15px;
+}
+
+.level1 {
+    background-color: rgb(231, 228, 255);
+}
+
+.level2 {
+    background-color: rgb(255, 237, 227);
+}
+
+.level3 {
+    background-color: rgb(242, 248, 227);
+}
+
+.level4 {
+    background-color: rgb(215, 238, 255);
+}
+
+.level5 {
+    background-color: rgb(255, 252, 186);
+}

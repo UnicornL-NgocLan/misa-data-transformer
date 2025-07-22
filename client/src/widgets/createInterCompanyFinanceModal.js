@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { Modal } from 'antd'
 import { Form, Select, Space } from 'antd'
 import app from '../axiosConfig'
-import { InputNumber } from 'antd'
+import { InputNumber, Input, DatePicker } from 'antd'
 import { useZustand } from '../zustand'
+import dayjs from 'dayjs'
 
 const InterCompanyFinanceModal = ({
   isModalOpen,
@@ -20,16 +21,20 @@ const InterCompanyFinanceModal = ({
       const {
         subjectCompanyId,
         counterpartCompanyId,
-        value,
+        debit,
+        credit,
         type,
         activityGroup,
+        account,
+        date,
       } = form.getFieldsValue()
       if (
         !subjectCompanyId ||
         !counterpartCompanyId ||
-        !value ||
         !type ||
-        !activityGroup
+        !activityGroup ||
+        !account ||
+        !date
       )
         return alert('Vui lòng nhập đầy đủ thông tin')
       if (subjectCompanyId === counterpartCompanyId)
@@ -38,15 +43,27 @@ const InterCompanyFinanceModal = ({
       if (isModalOpen?._id) {
         await app.patch(
           `/api/update-inter-company-finance/${isModalOpen?._id}`,
-          { subjectCompanyId, counterpartCompanyId, value, type, activityGroup }
+          {
+            subjectCompanyId,
+            counterpartCompanyId,
+            debit: debit || 0,
+            type,
+            activityGroup,
+            credit: credit || 0,
+            account,
+            date,
+          }
         )
       } else {
         await app.post('/api/create-inter-company-finance', {
           subjectCompanyId,
           counterpartCompanyId,
-          value,
+          debit,
           type,
+          credit,
           activityGroup,
+          account,
+          date,
         })
       }
       await handleFetchInterCompanyFinances()
@@ -70,9 +87,12 @@ const InterCompanyFinanceModal = ({
         'counterpartCompanyId',
         isModalOpen?.counterpartCompanyId?._id
       )
-      form.setFieldValue('value', isModalOpen?.value)
+      form.setFieldValue('debit', isModalOpen?.debit)
+      form.setFieldValue('credit', isModalOpen?.credit)
       form.setFieldValue('type', isModalOpen?.type)
       form.setFieldValue('activityGroup', isModalOpen?.activityGroup)
+      form.setFieldValue('date', dayjs(isModalOpen?.date))
+      form.setFieldValue('account', isModalOpen?.account)
     }
   }, [])
 
@@ -172,27 +192,70 @@ const InterCompanyFinanceModal = ({
             />
           </Form.Item>
         </Space.Compact>
-        <Form.Item
-          name="value"
-          label="Giá trị (VND)"
-          rules={[{ required: true, message: 'Vui lòng nhập giá trị!' }]}
-        >
-          <InputNumber
-            inputMode="decimal"
-            style={{ width: '100%' }}
-            formatter={(value) =>
-              value
-                ? value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') // thousands with comma
-                : ''
-            }
-            parser={(value) =>
-              value
-                ? parseFloat(value.toString().replace(/,/g, '')) // remove commas
-                : 0
-            }
-            min={0}
-          />
-        </Form.Item>
+        <Space.Compact style={{ display: 'flex' }}>
+          <Form.Item
+            name="account"
+            label="Tài khoản"
+            style={{ flex: 1 }}
+            rules={[{ required: true, message: 'Hãy nhập tài khoản!' }]}
+          >
+            <Input className="w-full" placeholder="331..." />
+          </Form.Item>
+          <Form.Item
+            name="date"
+            label="Ngày"
+            style={{ flex: 1 }}
+            rules={[{ required: true, message: 'Nhập ngày!' }]}
+          >
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+        </Space.Compact>
+        <Space.Compact style={{ display: 'flex' }}>
+          <Form.Item
+            name="debit"
+            label="Nợ (VND)"
+            style={{ flex: 1 }}
+            rules={[{ required: true, message: 'Vui lòng nhập giá trị!' }]}
+          >
+            <InputNumber
+              inputMode="decimal"
+              style={{ width: '100%' }}
+              formatter={(value) =>
+                value
+                  ? value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') // thousands with comma
+                  : ''
+              }
+              parser={(value) =>
+                value
+                  ? parseFloat(value.toString().replace(/,/g, '')) // remove commas
+                  : 0
+              }
+              min={0}
+            />
+          </Form.Item>
+          <Form.Item
+            name="credit"
+            label="Có (VND)"
+            style={{ flex: 1 }}
+            rules={[{ required: true, message: 'Vui lòng nhập giá trị!' }]}
+          >
+            <InputNumber
+              inputMode="decimal"
+              style={{ width: '100%' }}
+              formatter={(value) =>
+                value
+                  ? value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') // thousands with comma
+                  : ''
+              }
+              parser={(value) =>
+                value
+                  ? parseFloat(value.toString().replace(/,/g, '')) // remove commas
+                  : 0
+              }
+              min={0}
+            />
+          </Form.Item>
+        </Space.Compact>
       </Form>
     </Modal>
   )

@@ -633,16 +633,20 @@ const dataCtrl = {
       const {
         subjectCompanyId,
         counterpartCompanyId,
-        value,
+        debit,
+        credit,
         activityGroup,
         type,
+        account,
+        date,
       } = req.body
       if (
         !subjectCompanyId ||
         !counterpartCompanyId ||
-        !value ||
         !activityGroup ||
-        !type
+        !type ||
+        !date ||
+        !account
       )
         return res
           .status(400)
@@ -658,17 +662,18 @@ const dataCtrl = {
         activityGroup,
       })
       if (existingRecord)
-        return res
-          .status(400)
-          .json({
-            msg: 'Đã có tồn tại dữ liệu ghi nhận công nợ liên quan 2 công ty đó và loại, nhóm hoạt động',
-          })
+        return res.status(400).json({
+          msg: 'Đã có tồn tại dữ liệu ghi nhận công nợ liên quan 2 công ty đó và loại, nhóm hoạt động',
+        })
       await InterCompanyFinances.create({
         subjectCompanyId,
         counterpartCompanyId,
-        value,
         type,
         activityGroup,
+        account,
+        debit,
+        credit,
+        date,
         lastUpdatedBy: req.user._id,
       })
 
@@ -708,7 +713,10 @@ const dataCtrl = {
         subjectCompanyId: { $in: req.user.companyIds },
       })
         .populate('lastUpdatedBy', 'name')
-        .populate('counterpartCompanyId subjectCompanyId', 'name shortname')
+        .populate(
+          'counterpartCompanyId subjectCompanyId',
+          'name shortname taxCode'
+        )
       res.status(200).json({ data: interCompanyFinances })
     } catch (error) {
       res.status(500).json({ msg: error.message })

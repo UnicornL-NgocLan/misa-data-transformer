@@ -2,6 +2,8 @@ const mongoose = require('mongoose')
 
 const InterCompanyFinanceSchema = mongoose.Schema(
   {
+    date: Date,
+    account: String,
     subjectCompanyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Company',
@@ -18,7 +20,11 @@ const InterCompanyFinanceSchema = mongoose.Schema(
     activityGroup: {
       type: String,
     },
-    value: {
+    debit: {
+      type: Number,
+      required: true,
+    },
+    credit: {
       type: Number,
       required: true,
     },
