@@ -140,6 +140,15 @@ const App = () => {
       },
     },
     {
+      key: 7,
+      icon: <FaMoneyBill1Wave />,
+      label: 'Nguồn',
+      disabled: !checkRights('source', ['read']),
+      onClick: () => {
+        handleNavigate('/source', 7)
+      },
+    },
+    {
       key: 7.2,
       icon: <GrTransaction />,
       label: 'Hệ thống công nợ',
