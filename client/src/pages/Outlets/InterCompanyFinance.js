@@ -3,7 +3,7 @@ import { Table, Button, Space, Tag, Tooltip } from 'antd'
 import { useZustand } from '../../zustand'
 import { FiPlus } from 'react-icons/fi'
 import InterCompanyFinanceModal from '../../widgets/createInterCompanyFinanceModal'
-import { Input, Typography } from 'antd'
+import { Input } from 'antd'
 import Highlighter from 'react-highlight-words'
 import { MdDelete } from 'react-icons/md'
 import { SearchOutlined } from '@ant-design/icons'
@@ -11,13 +11,18 @@ import app from '../../axiosConfig'
 import moment from 'moment'
 import { MdEdit } from 'react-icons/md'
 import useCheckRights from '../../utils/checkRights'
-import { FaFileExport, FaUpload } from 'react-icons/fa'
+import { FaFileExport, FaUpload, FaClipboardCheck } from 'react-icons/fa'
 import * as FileSaver from 'file-saver'
 import { add7Hours } from '../../utils/plus7Hours'
 import { validExcelFile } from '../../globalVariables'
 import { FaExchangeAlt, FaChartArea } from 'react-icons/fa'
 import { Tabs } from 'antd'
 import InterCompanyFinanceChart from '../../widgets/interCompanyFinanceChart'
+import dayjs from 'dayjs'
+import { FaTrash } from 'react-icons/fa'
+import { DatePicker } from 'antd'
+import { set } from 'lodash'
+const { RangePicker } = DatePicker
 
 const InterCompanyFinance = () => {
   const [interCompanyFinances, setInterCompanyFinances] = useState([])
@@ -34,6 +39,10 @@ const InterCompanyFinance = () => {
   const fileInputRef = useRef(null)
   const searchInput = useRef(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [filteredData, setFilteredData] = useState([])
+  const [filteredInterCompanyFinances, setFilteredInterCompanyFinances] =
+    useState([])
+  const [selectedRowKeys, setSelectedRowKeys] = useState([])
   const checkRights = useCheckRights()
 
   const showModal = (user) => {
@@ -165,6 +174,7 @@ const InterCompanyFinance = () => {
       const { data } = await app.get('/api/get-inter-company-finances')
       setInterCompanyFinances(data.data)
       setInterCompanyFinanceState(data.data)
+      setFilteredInterCompanyFinances(data.data)
     } catch (error) {
       alert(error?.response?.data?.msg || error)
     }
@@ -217,6 +227,7 @@ const InterCompanyFinance = () => {
       )
       setInterCompanyFinances(newSources)
       setInterCompanyFinanceState(newSources)
+      setFilteredInterCompanyFinances(newSources)
     } catch (error) {
       alert(error?.response?.data?.msg || error)
     } finally {
@@ -369,6 +380,12 @@ const InterCompanyFinance = () => {
       sorter: (a, b) => moment(a.date) - moment(b.date),
       width: 100,
       render: (value) => <span>{moment(value).format('DD/MM/YYYY')}</span>,
+      filterDropdown: () => (
+        <div style={{ padding: 8 }}>
+          <RangePicker onChange={handleDateRangeFilter} />
+        </div>
+      ),
+      onFilter: () => {},
     },
     {
       title: 'Công ty chủ thể',
@@ -508,8 +525,9 @@ const InterCompanyFinance = () => {
       key: 'action',
       fixed: 'right',
       hidden:
-        !checkRights('interCompanyFinance', ['write']) &&
-        !checkRights('interCompanyFinance', ['canDelete']),
+        (!checkRights('interCompanyFinance', ['write']) &&
+          !checkRights('interCompanyFinance', ['canDelete'])) ||
+        selectedRowKeys.length > 0,
       width: 100,
       render: (_) => (
         <Space size="middle">
@@ -540,21 +558,262 @@ const InterCompanyFinance = () => {
     },
   ]
 
+  const diffNotingColumns = [
+    {
+      title: 'Công ty A',
+      dataIndex: 'subjectA',
+      key: 'subjectA',
+      sorter: (a, b) => a.subjectA - b.subjectA,
+    },
+    {
+      title: 'Tài khoản A',
+      dataIndex: 'accountA',
+      key: 'accountA',
+      sorter: (a, b) => a.accountA - b.accountA,
+    },
+    {
+      title: 'Giá trị A (VNĐ)',
+      dataIndex: 'balanceA',
+      key: 'balanceA',
+      align: 'right',
+      sorter: (a, b) => a.balanceA - b.balanceA,
+      render: (value) => {
+        return <span>{Intl.NumberFormat().format(value)}</span>
+      },
+    },
+    {
+      title: 'Công ty B',
+      dataIndex: 'subjectB',
+      key: 'subjectB',
+      sorter: (a, b) => a.subjectB - b.subjectB,
+    },
+    {
+      title: 'Tài khoản B',
+      dataIndex: 'accountB',
+      key: 'accountB',
+      sorter: (a, b) => a.accountB - b.accountB,
+    },
+    {
+      title: 'Giá trị B (VNĐ)',
+      dataIndex: 'balanceB',
+      key: 'balanceB',
+      align: 'right',
+      sorter: (a, b) => a.balanceB - b.balanceB,
+      render: (value) => {
+        return <span>{Intl.NumberFormat().format(value)}</span>
+      },
+    },
+    {
+      title: 'Phần chênh lệch (VNĐ)',
+      dataIndex: 'delta',
+      key: 'delta',
+      align: 'right',
+      sorter: (a, b) => a.delta - b.delta,
+      render: (value) => {
+        return <span>{Intl.NumberFormat().format(value)}</span>
+      },
+    },
+    {
+      title: 'Nhóm hoạt động',
+      dataIndex: 'activityGroup',
+      key: 'activityGroup',
+      align: 'center',
+      fixed: 'right',
+      filters: [
+        {
+          value: 'business',
+          text: 'Hoạt động kinh doanh',
+        },
+        {
+          value: 'invest',
+          text: 'Hoạt động đầu tư',
+        },
+        {
+          value: 'finance',
+          text: 'Hoạt động tài chính',
+        },
+        {
+          value: 'others',
+          text: 'Khác',
+        },
+      ],
+      onFilter: (value, record) => record.activityGroup === value,
+      render: (state) => (
+        <span>
+          {state === 'business'
+            ? 'Hoạt động kinh doanh'
+            : state === 'invest'
+            ? 'Hoạt động đầu tư'
+            : state === 'finance'
+            ? 'Hoạt động tài chính'
+            : 'Khác'}
+        </span>
+      ),
+    },
+  ]
+
+  function findDebtDiscrepancies(debts) {
+    const discrepancies = []
+    const used = new Set()
+
+    debts.forEach((entry) => {
+      const { id, subject, partner, balance, type, activityGroup } = entry
+
+      // Tạo khóa tìm kiếm ngược
+      const counterpartKey = `${partner}|${subject}|${activityGroup}|${
+        type === 'payable' ? 'receivable' : 'payable'
+      }`
+
+      // Bỏ qua nếu đã xét cặp này
+      const currentKey = `${subject}|${partner}|${activityGroup}|${type}`
+      if (used.has(currentKey) || used.has(counterpartKey)) return
+
+      // Tìm counterpart
+      const counterpart = debts.find(
+        (e) =>
+          e.subject === partner &&
+          e.partner === subject &&
+          e.activityGroup === activityGroup &&
+          e.type !== type
+      )
+
+      if (!counterpart) {
+        discrepancies.push({
+          subjectA: subject,
+          subjectB: partner,
+          activityGroup,
+          balanceA: balance,
+          balanceB: 0,
+          delta: balance,
+          idA: id,
+          idB: null,
+        })
+      } else if (balance !== counterpart.balance) {
+        discrepancies.push({
+          subjectA: subject,
+          subjectB: partner,
+          activityGroup,
+          balanceA: balance,
+          balanceB: counterpart.balance,
+          delta: Math.abs(balance - counterpart.balance),
+          idA: id,
+          idB: counterpart.id,
+        })
+      }
+
+      // Đánh dấu đã xét
+      used.add(currentKey)
+      used.add(counterpartKey)
+    })
+
+    return discrepancies
+  }
+
+  const processData = (raw) => {
+    return raw.map((item) => {
+      return {
+        date: item.date,
+        id: item._id,
+        subject:
+          item.subjectCompanyId?.shortname || item.subjectCompanyId?.name,
+        partner:
+          item.counterpartCompanyId?.shortname ||
+          item.counterpartCompanyId?.name,
+        balance: Math.abs(item.debit - item.credit),
+        debit: item.debit,
+        credit: item.credit,
+        type: item.type,
+        activityGroup: item.activityGroup,
+      }
+    })
+  }
+
+  const diffDebts = findDebtDiscrepancies(processData(interCompanyFinances))
+
+  const handleDateFilter = (date) => {
+    if (!date || date.length === 0) {
+      setFilteredData(diffDebts)
+    } else {
+      const filtered = interCompanyFinances.filter((item) => {
+        const startDay = dayjs(date, 'DD/MM/YYYY')
+        const endDay = dayjs(date, 'DD/MM/YYYY')
+        const dueDateFormat = dayjs(item.date)
+        return dueDateFormat.isBetween(startDay, endDay, 'day', '[]')
+      })
+      setFilteredData(findDebtDiscrepancies(processData(filtered)))
+    }
+  }
+
+  const handleDateRangeFilter = (dates) => {
+    if (!dates || dates.length === 0) {
+      setFilteredInterCompanyFinances(interCompanyFinances)
+    } else {
+      const [start, end] = dates
+      const filtered = interCompanyFinances.filter((item) => {
+        const startDay = dayjs(start, 'DD/MM/YYYY')
+        const endDay = dayjs(end, 'DD/MM/YYYY')
+        const dueDateFormat = dayjs(item.date)
+        return dueDateFormat.isBetween(startDay, endDay, 'day', '[]')
+      })
+      setFilteredInterCompanyFinances(filtered)
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm('Bạn có chắc muốn xóa tất cả dữ liệu đã chọn?')) return
+    setIsProcessing(true)
+    const list = [...selectedRowKeys].map((i) => {
+      return app.delete(`/api/delete-inter-company-finance/${i}`)
+    })
+    try {
+      await Promise.all(list)
+      const newSources = [...interCompanyFinances].filter(
+        (i) => !selectedRowKeys.includes(i._id)
+      )
+
+      const filteredNewSources = filteredInterCompanyFinances.filter(
+        (i) => !selectedRowKeys.includes(i._id)
+      )
+      setInterCompanyFinances(newSources)
+      setInterCompanyFinanceState(newSources)
+      setFilteredInterCompanyFinances(filteredNewSources)
+      setSelectedRowKeys([])
+    } catch (error) {
+      alert(error?.response?.data?.msg || error)
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const rowSelection = {
+    onChange: (mySelectedRows) => {
+      setSelectedRowKeys(mySelectedRows)
+    },
+  }
+
   useEffect(() => {
-    if (currentInterCompanyFinances.length > 0)
+    if (currentInterCompanyFinances.length > 0) {
       setInterCompanyFinances(currentInterCompanyFinances)
+      setFilteredInterCompanyFinances(currentInterCompanyFinances)
+    }
   }, [])
 
   return (
     <>
       <Tabs
         defaultActiveKey="1"
-        items={[FaExchangeAlt, FaChartArea].map((Icon, i) => {
+        items={[FaExchangeAlt, FaClipboardCheck, FaChartArea].map((Icon, i) => {
           const id = String(i + 1)
           return {
             key: id,
-            disabled: id === '2' && auth.role === 'basic',
-            label: `${id === '1' ? 'Hệ thống công nợ' : 'Biểu đồ trực quan'}`,
+            disabled: id === '3' && auth.role === 'basic',
+            label: `${
+              id === '1'
+                ? 'Hệ thống công nợ'
+                : id === '2'
+                ? 'Đối chiếu công nợ bị lệch'
+                : 'Biểu đồ trực quan'
+            }`,
             children:
               id === '1' ? (
                 <>
@@ -602,20 +861,38 @@ const InterCompanyFinance = () => {
                         </Button>
                       </div>
                     )}
+                    {selectedRowKeys.length > 0 && (
+                      <Button
+                        type="primary"
+                        danger
+                        disabled={isProcessing}
+                        onClick={handleBulkDelete}
+                        style={{ marginBottom: 16 }}
+                        icon={<FaTrash />}
+                      >
+                        Xóa
+                      </Button>
+                    )}
                   </Space.Compact>
                   <Table
                     columns={columns}
+                    rowSelection={rowSelection}
                     dataSource={
                       checkRights('interCompanyFinance', ['read'])
-                        ? [...interCompanyFinances].map((i) => {
-                            return {
-                              ...i,
-                              balance: i.debit - i.credit,
-                              company: i.subjectCompanyId?.name,
-                              counterpartCompany: i.counterpartCompanyId?.name,
-                              lastUpdatedBy: i.lastUpdatedBy?.name,
-                            }
-                          })
+                        ? [...filteredInterCompanyFinances]
+                            .filter((i) =>
+                              auth.companyIds.includes(i.subjectCompanyId?._id)
+                            )
+                            .map((i) => {
+                              return {
+                                ...i,
+                                balance: i.debit - i.credit,
+                                company: i.subjectCompanyId?.name,
+                                counterpartCompany:
+                                  i.counterpartCompanyId?.name,
+                                lastUpdatedBy: i.lastUpdatedBy?.name,
+                              }
+                            })
                         : []
                     }
                     bordered
@@ -643,6 +920,28 @@ const InterCompanyFinance = () => {
                       }
                     />
                   )}
+                </>
+              ) : id === '2' ? (
+                <>
+                  <DatePicker
+                    onChange={handleDateFilter}
+                    placeholder="Chọn ngày để lọc"
+                    style={{ width: 200, marginBottom: 20 }}
+                  />
+                  <Table
+                    columns={diffNotingColumns}
+                    dataSource={filteredData.map((i) => {
+                      return {
+                        ...i,
+                        accountA: interCompanyFinances.find(
+                          (item) => item._id === i.idA
+                        )?.account,
+                        accountB: interCompanyFinances.find(
+                          (item) => item._id === i.idB
+                        )?.account,
+                      }
+                    })}
+                  />
                 </>
               ) : (
                 <InterCompanyFinanceChart data={interCompanyFinances} />

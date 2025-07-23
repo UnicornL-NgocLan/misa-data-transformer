@@ -7,6 +7,7 @@ const Sources = require('../models/source')
 const LoanContracts = require('../models/loanContract')
 const InterCompanyFinances = require('../models/interCompanyFinance')
 const CompanyTypes = require('../models/companyType')
+const moment = require('moment-timezone')
 
 const dataCtrl = {
   createCompany: async (req, res) => {
@@ -655,15 +656,31 @@ const dataCtrl = {
         return res
           .status(400)
           .json({ msg: 'Công ty chủ thể và đối tác không thể trùng nhau' })
-      const existingRecord = await InterCompanyFinances.findOne({
+      const list = await InterCompanyFinances.find({
         subjectCompanyId,
         counterpartCompanyId,
         type,
         activityGroup,
       })
+
+      const existingRecord =
+        list.length > 0
+          ? list?.some((item) => {
+              const dateCreated = moment(item.date)
+                .tz('Asia/Bangkok')
+                .format('YYYY-MM-DD')
+              const dateInput = moment(date)
+                .tz('Asia/Bangkok')
+                .format('YYYY-MM-DD')
+              if (dateCreated === dateInput) {
+                return true
+              }
+            })
+          : false
+
       if (existingRecord)
         return res.status(400).json({
-          msg: 'Đã có tồn tại dữ liệu ghi nhận công nợ liên quan 2 công ty đó và loại, nhóm hoạt động',
+          msg: 'Đã có tồn tại dữ liệu ghi nhận công nợ liên quan 2 công ty đó và loại, nhóm hoạt động, ngày',
         })
       await InterCompanyFinances.create({
         subjectCompanyId,
@@ -692,6 +709,37 @@ const dataCtrl = {
           delete parameters[key]
         }
       })
+
+      const list = await InterCompanyFinances.find({
+        subjectCompanyId: parameters.subjectCompanyId,
+        counterpartCompanyId: parameters.counterpartCompanyId,
+        type: parameters.type,
+        activityGroup: parameters.activityGroup,
+      })
+
+      const existingRecord =
+        list.length > 0
+          ? list?.some((item) => {
+              const dateCreated = moment(item.date)
+                .tz('Asia/Bangkok')
+                .format('YYYY-MM-DD')
+              const dateInput = moment(parameters.date)
+                .tz('Asia/Bangkok')
+                .format('YYYY-MM-DD')
+              if (
+                dateCreated === dateInput &&
+                item._id.toString() !== id?.toString()
+              ) {
+                return true
+              }
+            })
+          : false
+
+      if (existingRecord)
+        return res.status(400).json({
+          msg: 'Đã có tồn tại dữ liệu ghi nhận công nợ liên quan 2 công ty đó và loại, nhóm hoạt động, ngày',
+        })
+
       const newOne = await InterCompanyFinances.findOneAndUpdate(
         { _id: id },
         { ...parameters, lastUpdatedBy: req.user._id },
@@ -710,7 +758,10 @@ const dataCtrl = {
   getInterCompanyFinance: async (req, res) => {
     try {
       const interCompanyFinances = await InterCompanyFinances.find({
-        subjectCompanyId: { $in: req.user.companyIds },
+        $or: [
+          { subjectCompanyId: { $in: req.user.companyIds } },
+          { counterpartCompanyId: { $in: req.user.companyIds } },
+        ],
       })
         .populate('lastUpdatedBy', 'name')
         .populate(
