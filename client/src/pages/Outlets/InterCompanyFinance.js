@@ -263,32 +263,66 @@ const InterCompanyFinance = () => {
       worker.onmessage = async (e) => {
         const { success, data, error } = e.data
         if (success) {
-          const allValueValid = data.every(
-            (i) =>
-              companies.find(
+          let errorText = ''
+          const allValueValid = data.every((i) => {
+            if (
+              !companies.find(
                 (item) =>
                   i.subjectCompanyId && item.taxCode === i.subjectCompanyId
-              ) &&
-              companies.find(
-                (item) =>
-                  i.counterpartCompanyId &&
-                  item.taxCode === i.counterpartCompanyId
-              ) &&
-              ['payable', 'receivable'].find((e) => e === i.type) &&
+              )
+            ) {
+              errorText += `Mã số thuế công ty chủ thể ${i.subjectCompanyId} không tồn tại trong hệ thống.\n`
+              return false
+            }
+
+            if (!i.counterpartCompanyId) {
+              errorText += `Điền mã số thuế công ty đối tác hệ thống.\n`
+              return false
+            }
+
+            if (i.debit === undefined || i.credit === undefined) {
+              errorText += `Nợ và Có không được để trống. Vui lòng kiểm tra lại.\n`
+              return false
+            }
+
+            if (i.debit < 0 || i.credit < 0) {
+              errorText += `Nợ và có phải là số dương. Vui lòng kiểm tra lại.\n`
+              return false
+            }
+
+            if (!i.date) {
+              errorText += `Ngày không được để trống. Vui lòng kiểm tra lại.\n`
+              return false
+            }
+
+            if (!i.account) {
+              errorText += `Tài khoản không được để trống. Vui lòng kiểm tra lại.\n`
+              return false
+            }
+
+            if (!['payable', 'receivable'].find((e) => e === i.type)) {
+              errorText += `Loại phải là "Phải trả" hoặc "Phải thu". Vui lòng kiểm tra lại.\n`
+              return false
+            }
+
+            if (
               ['business', 'finance', 'invest', 'others'].find(
                 (e) => e === i.activityGroup
-              ) &&
-              (i._id ? interCompanyFinances.find((u) => u._id === i._id) : true)
-          )
+              ) === undefined
+            ) {
+              errorText += `Nhóm hoạt động phải là "Hoạt động kinh doanh", "Hoạt động đầu tư", "Hoạt động tài chính" hoặc "Khác". Vui lòng kiểm tra lại.\n`
+              return false
+            }
 
-          if (!allValueValid) {
-            fileInputRef.current.value = ''
-            setIsProcessing(false)
-            worker.terminate()
-            return alert(
-              'Kiểm tra lại mã số thuế công ty, loại, id, nhóm hoạt động xem có tồn tại trong hệ thống không?v'
-            )
-          }
+            if (i._id && !interCompanyFinances.find((u) => u._id === i._id)) {
+              errorText += `Không tìm thấy bản ghi với ID ${i._id}. Vui lòng kiểm tra lại.\n`
+              return false
+            }
+
+            return true
+          })
+
+          if (!allValueValid) return alert(errorText)
 
           const myMapList = data.map((i) => {
             const {
@@ -301,32 +335,20 @@ const InterCompanyFinance = () => {
               date,
               account,
             } = i
+
             const newSubjectCompanyId = companies.find(
               (item) => item.taxCode === subjectCompanyId
             )
+
             const newCounterpartCompanyId = companies.find(
               (item) => item.taxCode === counterpartCompanyId
             )
 
-            const valueInValid = debit < 0 || credit < 0
-            if (
-              valueInValid ||
-              !newSubjectCompanyId ||
-              !newCounterpartCompanyId ||
-              !type ||
-              !activityGroup ||
-              !date ||
-              !account
-            ) {
-              fileInputRef.current.value = ''
-              setIsProcessing(false)
-              worker.terminate()
-              return alert('Đảm bảo dữ liệu phải đầy đủ')
-            }
+            console.log(counterpartCompanyId, debit, credit)
 
             const processedData = {
               subjectCompanyId: newSubjectCompanyId._id,
-              counterpartCompanyId: newCounterpartCompanyId._id,
+              counterpartCompanyId: newCounterpartCompanyId?._id,
               debit,
               credit,
               type,
@@ -334,7 +356,6 @@ const InterCompanyFinance = () => {
               date,
               account,
             }
-
             return i._id
               ? app.patch(
                   `/api/update-inter-company-finance/${i._id}`,
@@ -342,10 +363,12 @@ const InterCompanyFinance = () => {
                 )
               : app.post('/api/create-inter-company-finance', processedData)
           })
+
           try {
             await Promise.all(myMapList)
             await handleFetchInterCompanyFinances()
           } catch (error) {
+            await handleFetchInterCompanyFinances()
             alert(error?.response?.data?.msg)
           }
           setIsProcessing(false)

@@ -641,17 +641,14 @@ const dataCtrl = {
         account,
         date,
       } = req.body
-      if (
-        !subjectCompanyId ||
-        !counterpartCompanyId ||
-        !activityGroup ||
-        !type ||
-        !date ||
-        !account
-      )
+      if (!subjectCompanyId || !activityGroup || !type || !date || !account)
         return res
           .status(400)
           .json({ msg: 'Vui lòng cung cấp đầy đủ thông tin' })
+      if (!counterpartCompanyId)
+        return res
+          .status(400)
+          .json({ msg: 'Công ty đối tác không có trong hệ thống' })
       if (subjectCompanyId === counterpartCompanyId)
         return res
           .status(400)
@@ -662,6 +659,11 @@ const dataCtrl = {
         type,
         activityGroup,
       })
+
+      if (req.user.companyIds.indexOf(subjectCompanyId) === -1)
+        return res
+          .status(400)
+          .json({ msg: 'Bạn không có quyền ghi nhận công nợ cho công ty này' })
 
       const existingRecord =
         list.length > 0
@@ -709,6 +711,11 @@ const dataCtrl = {
           delete parameters[key]
         }
       })
+
+      if (req.user.companyIds.indexOf(parameters.subjectCompanyId) === -1)
+        return res
+          .status(400)
+          .json({ msg: 'Bạn không có quyền cập nhật công nợ cho công ty này' })
 
       const list = await InterCompanyFinances.find({
         subjectCompanyId: parameters.subjectCompanyId,
