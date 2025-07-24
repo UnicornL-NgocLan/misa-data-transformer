@@ -19,6 +19,7 @@ import Setting from './Outlets/Setting'
 import LoanContract from './Outlets/LoanContract'
 import Tool from './Outlets/Tool'
 import InterCompanyFinance from './Outlets/InterCompanyFinance'
+import ProductSearchList from './ProductSearchList'
 
 const Main = () => {
   const { auth, setAuth } = useZustand()
@@ -77,10 +78,8 @@ const Main = () => {
           path="/login"
           element={auth ? <Navigate to="/user" /> : <Login />}
         />
-        <Route
-          path="/misa-data-transformer"
-          element={<MisaDataTransformer />}
-        />
+        <Route path="/misa-data-transformer" element={<ProductSearchList />} />
+        <Route path="/product-search-list" element={<MisaDataTransformer />} />
         <Route path="/bqck-calculator" element={<BQCKCalculator />} />
       </Routes>
     </BrowserRouter>

@@ -84,14 +84,6 @@ const Login = () => {
             Đăng nhập
           </Button>
         </Form.Item>
-        <Button
-          type="link"
-          style={{ width: '100%' }}
-          disabled={loading}
-          onClick={handleClickToMisaDataTransformer}
-        >
-          Truy cập trang chuyển đổi dữ liệu MISA
-        </Button>
       </Form>
     </div>
   )

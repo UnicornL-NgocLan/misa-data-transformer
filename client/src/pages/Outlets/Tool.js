@@ -42,10 +42,7 @@ const Tools = () => {
   }
 
   const handleToSearchProduct = () => {
-    window.open(
-      'https://metabase.seacorp.vn/public/question/a7f08a77-c1c2-4d37-990f-4c10d6392918',
-      '_blank'
-    )
+    window.open('/misa-data-transformer', '_blank')
   }
 
   return (
