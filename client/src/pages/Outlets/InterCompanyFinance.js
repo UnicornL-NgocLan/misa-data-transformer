@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Table, Button, Space, Tag, Tooltip } from 'antd'
 import { useZustand } from '../../zustand'
 import { FiPlus } from 'react-icons/fi'
@@ -21,7 +21,9 @@ import InterCompanyFinanceChart from '../../widgets/interCompanyFinanceChart'
 import dayjs from 'dayjs'
 import { FaTrash } from 'react-icons/fa'
 import { DatePicker } from 'antd'
-import { set } from 'lodash'
+import { Select } from 'antd'
+import InterCompanyFinanceList from '../../widgets/interCompanyFinanceDiffList'
+import { IoFilterSharp } from 'react-icons/io5'
 const { RangePicker } = DatePicker
 
 const InterCompanyFinance = () => {
@@ -39,148 +41,154 @@ const InterCompanyFinance = () => {
   const fileInputRef = useRef(null)
   const searchInput = useRef(null)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [filteredData, setFilteredData] = useState([])
   const [filteredInterCompanyFinances, setFilteredInterCompanyFinances] =
     useState([])
   const [selectedRowKeys, setSelectedRowKeys] = useState([])
+  // Store filter state
+  const [companyFilter, setCompanyFilter] = useState([])
+  const [dateRangeFilter, setDateRangeFilter] = useState([])
   const checkRights = useCheckRights()
 
-  const showModal = (user) => {
+  const showModal = useCallback((user) => {
     setIsModalOpen(user)
-  }
+  }, [])
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setIsModalOpen(false)
-  }
+  }, [])
 
-  const handleSearch = (selectedKeys, confirm, dataIndex) => {
+  const handleSearch = useCallback((selectedKeys, confirm, dataIndex) => {
     confirm()
     setSearchText(selectedKeys[0])
     setSearchedColumn(dataIndex)
-  }
+  }, [])
 
-  const handleReset = (clearFilters) => {
+  const handleReset = useCallback((clearFilters) => {
     clearFilters()
     setSearchText('')
-  }
+  }, [])
 
-  const getColumnSearchProps = (dataIndex) => ({
-    filterDropdown: ({
-      setSelectedKeys,
-      selectedKeys,
-      confirm,
-      clearFilters,
-      close,
-    }) => (
-      <div
-        style={{
-          padding: 8,
-        }}
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        <Input
-          ref={searchInput}
-          value={selectedKeys[0]}
-          onChange={(e) =>
-            setSelectedKeys(e.target.value ? [e.target.value] : [])
-          }
-          onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
+  const getColumnSearchProps = useCallback(
+    (dataIndex) => ({
+      filterDropdown: ({
+        setSelectedKeys,
+        selectedKeys,
+        confirm,
+        clearFilters,
+        close,
+      }) => (
+        <div
           style={{
-            marginBottom: 8,
-            display: 'block',
+            padding: 8,
           }}
-        />
-        <Space>
-          <Button
-            type="primary"
-            onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
-            icon={<SearchOutlined />}
-            size="small"
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <Input
+            ref={searchInput}
+            value={selectedKeys[0]}
+            onChange={(e) =>
+              setSelectedKeys(e.target.value ? [e.target.value] : [])
+            }
+            onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
             style={{
-              width: 90,
+              marginBottom: 8,
+              display: 'block',
             }}
-          >
-            Tìm kiếm
-          </Button>
-          <Button
-            onClick={() => clearFilters && handleReset(clearFilters)}
-            size="small"
-            style={{
-              width: 90,
-            }}
-          >
-            Reset
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            onClick={() => {
-              confirm({
-                closeDropdown: false,
-              })
-              setSearchText(selectedKeys[0])
-              setSearchedColumn(dataIndex)
-            }}
-          >
-            OK
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            onClick={() => {
-              close()
-            }}
-          >
-            Đóng
-          </Button>
-        </Space>
-      </div>
-    ),
-    filterIcon: (filtered) => (
-      <SearchOutlined
-        style={{
-          color: filtered ? '#1677ff' : undefined,
-        }}
-      />
-    ),
-    onFilter: (value, record) =>
-      record[dataIndex]
-        ?.toString()
-        ?.toLowerCase()
-        ?.includes(value?.toLowerCase()),
-    onFilterDropdownOpenChange: (visible) => {
-      if (visible) {
-        setTimeout(() => searchInput.current?.select(), 100)
-      }
-    },
-    render: (text) =>
-      searchedColumn === dataIndex ? (
-        <Highlighter
-          highlightStyle={{
-            backgroundColor: '#ffc069',
-            padding: 0,
-          }}
-          searchWords={[searchText]}
-          autoEscape
-          textToHighlight={text ? text.toString() : ''}
-        />
-      ) : (
-        text
+          />
+          <Space>
+            <Button
+              type="primary"
+              onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
+              icon={<SearchOutlined />}
+              size="small"
+              style={{
+                width: 90,
+              }}
+            >
+              Tìm kiếm
+            </Button>
+            <Button
+              onClick={() => clearFilters && handleReset(clearFilters)}
+              size="small"
+              style={{
+                width: 90,
+              }}
+            >
+              Reset
+            </Button>
+            <Button
+              type="link"
+              size="small"
+              onClick={() => {
+                confirm({
+                  closeDropdown: false,
+                })
+                setSearchText(selectedKeys[0])
+                setSearchedColumn(dataIndex)
+              }}
+            >
+              OK
+            </Button>
+            <Button
+              type="link"
+              size="small"
+              onClick={() => {
+                close()
+              }}
+            >
+              Đóng
+            </Button>
+          </Space>
+        </div>
       ),
-  })
+      filterIcon: (filtered) => (
+        <SearchOutlined
+          style={{
+            color: filtered ? '#1677ff' : undefined,
+          }}
+        />
+      ),
+      onFilter: (value, record) =>
+        record[dataIndex]
+          ?.toString()
+          ?.toLowerCase()
+          ?.includes(value?.toLowerCase()),
+      onFilterDropdownOpenChange: (visible) => {
+        if (visible) {
+          setTimeout(() => searchInput.current?.select(), 100)
+        }
+      },
+      render: (text) =>
+        searchedColumn === dataIndex ? (
+          <Highlighter
+            highlightStyle={{
+              backgroundColor: '#ffc069',
+              padding: 0,
+            }}
+            searchWords={[searchText]}
+            autoEscape
+            textToHighlight={text ? text.toString() : ''}
+          />
+        ) : (
+          text
+        ),
+    }),
+    [searchText, searchedColumn]
+  )
 
-  const handleFetchInterCompanyFinances = async () => {
+  const handleFetchInterCompanyFinances = useCallback(async () => {
     try {
       const { data } = await app.get('/api/get-inter-company-finances')
       setInterCompanyFinances(data.data)
       setInterCompanyFinanceState(data.data)
       setFilteredInterCompanyFinances(data.data)
+      applyFilters(companyFilter, dateRangeFilter)
     } catch (error) {
       alert(error?.response?.data?.msg || error)
     }
-  }
+  }, [companyFilter, dateRangeFilter])
 
-  const handleExportExcel = () => {
+  const handleExportExcel = useCallback(() => {
     setIsProcessing(true)
     const worker = new Worker(
       new URL('../../workers/exportToExcelFile.worker.js', import.meta.url)
@@ -214,575 +222,394 @@ const InterCompanyFinance = () => {
       worker.terminate()
       setIsProcessing(false)
     }
-  }
+  }, [interCompanyFinances])
 
-  const handleDeleteRecord = async (record) => {
-    try {
-      if (loading) return
-      if (!window.confirm('Bạn có chắc muốn xóa dữ liệu này?')) return
-      setLoading(true)
-      await app.delete(`/api/delete-inter-company-finance/${record._id}`)
-      const newSources = [...interCompanyFinances].filter(
-        (i) => i._id !== record._id
-      )
-      setInterCompanyFinances(newSources)
-      setInterCompanyFinanceState(newSources)
-      setFilteredInterCompanyFinances(newSources)
-    } catch (error) {
-      alert(error?.response?.data?.msg || error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const handleDeleteRecord = useCallback(
+    async (record) => {
+      try {
+        if (loading) return
+        if (!window.confirm('Bạn có chắc muốn xóa dữ liệu này?')) return
+        setLoading(true)
+        await app.delete(`/api/delete-inter-company-finance/${record._id}`)
+        const newSources = [...interCompanyFinances].filter(
+          (i) => i._id !== record._id
+        )
+        setInterCompanyFinances(newSources)
+        setInterCompanyFinanceState(newSources)
+        setFilteredInterCompanyFinances(newSources)
+        applyFilters(companyFilter, dateRangeFilter)
+      } catch (error) {
+        alert(error?.response?.data?.msg || error)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [
+      loading,
+      interCompanyFinances,
+      setInterCompanyFinances,
+      setInterCompanyFinanceState,
+      setFilteredInterCompanyFinances,
+      companyFilter,
+      dateRangeFilter,
+    ]
+  )
 
-  const handleAddFile = async (e) => {
-    try {
-      const file = e.target.files
-      const fileType = file[0].type
-      if (!validExcelFile.includes(fileType))
-        return alert('File của bạn phải là excel')
+  const handleAddFile = useCallback(
+    async (e) => {
+      try {
+        const file = e.target.files
+        const fileType = file[0].type
+        if (!validExcelFile.includes(fileType))
+          return alert('File của bạn phải là excel')
 
-      setIsProcessing(true)
-      // Read file into ArrayBuffer
-      const buffer = await new Promise((resolve, reject) => {
-        const fileReader = new FileReader()
-        fileReader.readAsArrayBuffer(file[0])
-        fileReader.onload = (e) => resolve(e.target.result)
-        fileReader.onerror = (err) => reject(err)
-      })
+        setIsProcessing(true)
+        // Read file into ArrayBuffer
+        const buffer = await new Promise((resolve, reject) => {
+          const fileReader = new FileReader()
+          fileReader.readAsArrayBuffer(file[0])
+          fileReader.onload = (e) => resolve(e.target.result)
+          fileReader.onerror = (err) => reject(err)
+        })
 
-      // Create a worker from public directory
-      const worker = new Worker(
-        new URL('../../workers/excelWorker.worker.js', import.meta.url)
-      )
+        // Create a worker from public directory
+        const worker = new Worker(
+          new URL('../../workers/excelWorker.worker.js', import.meta.url)
+        )
 
-      // Post the buffer to the worker
-      worker.postMessage(buffer)
+        // Post the buffer to the worker
+        worker.postMessage(buffer)
 
-      // Handle response from the worker
-      worker.onmessage = async (e) => {
-        const { success, data, error } = e.data
-        if (success) {
-          let errorText = ''
-          const allValueValid = data.every((i) => {
-            if (
-              !companies.find(
-                (item) =>
-                  i.subjectCompanyId && item.taxCode === i.subjectCompanyId
-              )
-            ) {
-              errorText += `Mã số thuế công ty chủ thể ${i.subjectCompanyId} không tồn tại trong hệ thống.\n`
-              return false
-            }
-
-            if (!i.counterpartCompanyId) {
-              errorText += `Điền mã số thuế công ty đối tác hệ thống.\n`
-              return false
-            }
-
-            if (i.debit === undefined || i.credit === undefined) {
-              errorText += `Nợ và Có không được để trống. Vui lòng kiểm tra lại.\n`
-              return false
-            }
-
-            if (i.debit < 0 || i.credit < 0) {
-              errorText += `Nợ và có phải là số dương. Vui lòng kiểm tra lại.\n`
-              return false
-            }
-
-            if (!i.date) {
-              errorText += `Ngày không được để trống. Vui lòng kiểm tra lại.\n`
-              return false
-            }
-
-            if (!i.account) {
-              errorText += `Tài khoản không được để trống. Vui lòng kiểm tra lại.\n`
-              return false
-            }
-
-            if (!['payable', 'receivable'].find((e) => e === i.type)) {
-              errorText += `Loại phải là "Phải trả" hoặc "Phải thu". Vui lòng kiểm tra lại.\n`
-              return false
-            }
-
-            if (
-              ['business', 'finance', 'invest', 'others'].find(
-                (e) => e === i.activityGroup
-              ) === undefined
-            ) {
-              errorText += `Nhóm hoạt động phải là "Hoạt động kinh doanh", "Hoạt động đầu tư", "Hoạt động tài chính" hoặc "Khác". Vui lòng kiểm tra lại.\n`
-              return false
-            }
-
-            if (i._id && !interCompanyFinances.find((u) => u._id === i._id)) {
-              errorText += `Không tìm thấy bản ghi với ID ${i._id}. Vui lòng kiểm tra lại.\n`
-              return false
-            }
-
-            return true
-          })
-
-          if (!allValueValid) return alert(errorText)
-
-          const myMapList = data.map((i) => {
-            const {
-              subjectCompanyId,
-              counterpartCompanyId,
-              debit,
-              credit,
-              type,
-              activityGroup,
-              date,
-              account,
-            } = i
-
-            const newSubjectCompanyId = companies.find(
-              (item) => item.taxCode === subjectCompanyId
-            )
-
-            const newCounterpartCompanyId = companies.find(
-              (item) => item.taxCode === counterpartCompanyId
-            )
-
-            console.log(counterpartCompanyId, debit, credit)
-
-            const processedData = {
-              subjectCompanyId: newSubjectCompanyId._id,
-              counterpartCompanyId: newCounterpartCompanyId?._id,
-              debit,
-              credit,
-              type,
-              activityGroup,
-              date,
-              account,
-            }
-            return i._id
-              ? app.patch(
-                  `/api/update-inter-company-finance/${i._id}`,
-                  processedData
+        // Handle response from the worker
+        worker.onmessage = async (e) => {
+          const { success, data, error } = e.data
+          if (success) {
+            let errorText = ''
+            const allValueValid = data.every((i) => {
+              if (
+                !companies.find(
+                  (item) =>
+                    i.subjectCompanyId && item.taxCode === i.subjectCompanyId
                 )
-              : app.post('/api/create-inter-company-finance', processedData)
-          })
+              ) {
+                errorText += `Mã số thuế công ty chủ thể ${i.subjectCompanyId} không tồn tại trong hệ thống.\n`
+                return false
+              }
 
-          try {
-            await Promise.all(myMapList)
-            await handleFetchInterCompanyFinances()
-          } catch (error) {
-            await handleFetchInterCompanyFinances()
-            alert(error?.response?.data?.msg)
+              if (!i.counterpartCompanyId) {
+                errorText += `Điền mã số thuế công ty đối tác hệ thống.\n`
+                return false
+              }
+
+              if (i.debit === undefined || i.credit === undefined) {
+                errorText += `Nợ và Có không được để trống. Vui lòng kiểm tra lại.\n`
+                return false
+              }
+
+              if (i.debit < 0 || i.credit < 0) {
+                errorText += `Nợ và có phải là số dương. Vui lòng kiểm tra lại.\n`
+                return false
+              }
+
+              if (!i.date) {
+                errorText += `Ngày không được để trống. Vui lòng kiểm tra lại.\n`
+                return false
+              }
+
+              if (!i.account) {
+                errorText += `Tài khoản không được để trống. Vui lòng kiểm tra lại.\n`
+                return false
+              }
+
+              if (!['payable', 'receivable'].find((e) => e === i.type)) {
+                errorText += `Loại phải là "Phải trả" hoặc "Phải thu". Vui lòng kiểm tra lại.\n`
+                return false
+              }
+
+              if (
+                ['business', 'finance', 'invest', 'others'].find(
+                  (e) => e === i.activityGroup
+                ) === undefined
+              ) {
+                errorText += `Nhóm hoạt động phải là "Hoạt động kinh doanh", "Hoạt động đầu tư", "Hoạt động tài chính" hoặc "Khác". Vui lòng kiểm tra lại.\n`
+                return false
+              }
+
+              if (i._id && !interCompanyFinances.find((u) => u._id === i._id)) {
+                errorText += `Không tìm thấy bản ghi với ID ${i._id}. Vui lòng kiểm tra lại.\n`
+                return false
+              }
+
+              return true
+            })
+
+            if (!allValueValid) return alert(errorText)
+
+            const myMapList = data.map((i) => {
+              const {
+                subjectCompanyId,
+                counterpartCompanyId,
+                debit,
+                credit,
+                type,
+                activityGroup,
+                date,
+                account,
+              } = i
+
+              const newSubjectCompanyId = companies.find(
+                (item) => item.taxCode === subjectCompanyId
+              )
+
+              const newCounterpartCompanyId = companies.find(
+                (item) => item.taxCode === counterpartCompanyId
+              )
+
+              const processedData = {
+                subjectCompanyId: newSubjectCompanyId._id,
+                counterpartCompanyId: newCounterpartCompanyId?._id,
+                debit,
+                credit,
+                type,
+                activityGroup,
+                date,
+                account,
+              }
+              return i._id
+                ? app.patch(
+                    `/api/update-inter-company-finance/${i._id}`,
+                    processedData
+                  )
+                : app.post('/api/create-inter-company-finance', processedData)
+            })
+
+            try {
+              await Promise.all(myMapList)
+              await handleFetchInterCompanyFinances()
+            } catch (error) {
+              await handleFetchInterCompanyFinances()
+              alert(error?.response?.data?.msg)
+            }
+            setIsProcessing(false)
+          } else {
+            alert('Lỗi xử lý file: ' + error)
           }
-          setIsProcessing(false)
-        } else {
-          alert('Lỗi xử lý file: ' + error)
+
+          worker.terminate()
         }
 
-        worker.terminate()
+        // Handle worker errors
+        worker.onerror = (err) => {
+          console.error('Worker error:', err)
+          alert('Đã xảy ra lỗi trong quá trình xử lý file.')
+          worker.terminate()
+        }
+      } catch (error) {
+        alert('Lỗi không xác định: ' + error?.response?.data?.msg)
+        setIsProcessing(false)
+      } finally {
+        fileInputRef.current.value = ''
+        setIsProcessing(false)
       }
+    },
+    [companies, interCompanyFinances, handleFetchInterCompanyFinances]
+  )
 
-      // Handle worker errors
-      worker.onerror = (err) => {
-        console.error('Worker error:', err)
-        alert('Đã xảy ra lỗi trong quá trình xử lý file.')
-        worker.terminate()
-      }
-    } catch (error) {
-      alert('Lỗi không xác định: ' + error?.response?.data?.msg)
-      setIsProcessing(false)
-    } finally {
-      fileInputRef.current.value = ''
-      setIsProcessing(false)
-    }
-  }
-
-  const columns = [
-    {
-      title: 'Ngày',
-      dataIndex: 'date',
-      key: 'date',
-      align: 'right',
-      sorter: (a, b) => moment(a.date) - moment(b.date),
-      width: 100,
-      render: (value) => <span>{moment(value).format('DD/MM/YYYY')}</span>,
-      filterDropdown: () => (
-        <div style={{ padding: 8 }}>
-          <RangePicker onChange={handleDateRangeFilter} />
-        </div>
-      ),
-      onFilter: () => {},
-    },
-    {
-      title: 'Công ty chủ thể',
-      dataIndex: 'company',
-      key: 'company',
-      width: 350,
-      ...getColumnSearchProps('company'),
-    },
-    {
-      title: 'Công ty đối tác',
-      dataIndex: 'counterpartCompany',
-      key: 'counterpartCompany',
-      width: 350,
-      ...getColumnSearchProps('counterpartCompany'),
-    },
-    {
-      title: 'Tài khoản',
-      dataIndex: 'account',
-      key: 'account',
-      width: 100,
-      ...getColumnSearchProps('account'),
-    },
-    {
-      title: 'Loại',
-      dataIndex: 'type',
-      key: 'type',
-      align: 'center',
-      fixed: 'right',
-      filters: [
-        {
-          value: 'payable',
-          text: 'Phải trả',
-        },
-        {
-          value: 'receivable',
-          text: 'Phải thu',
-        },
-      ],
-      onFilter: (value, record) => record.type === value,
-      render: (state) => (
-        <Tag color={state === 'payable' ? 'red' : 'green'}>
-          {state === 'payable' ? 'Phải trả' : 'Phải thu'}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Nhóm hoạt động',
-      dataIndex: 'activityGroup',
-      key: 'activityGroup',
-      align: 'center',
-      fixed: 'right',
-      filters: [
-        {
-          value: 'business',
-          text: 'Hoạt động kinh doanh',
-        },
-        {
-          value: 'invest',
-          text: 'Hoạt động đầu tư',
-        },
-        {
-          value: 'finance',
-          text: 'Hoạt động tài chính',
-        },
-        {
-          value: 'others',
-          text: 'Khác',
-        },
-      ],
-      onFilter: (value, record) => record.activityGroup === value,
-      render: (state) => (
-        <span>
-          {state === 'business'
-            ? 'Hoạt động kinh doanh'
-            : state === 'invest'
-            ? 'Hoạt động đầu tư'
-            : state === 'finance'
-            ? 'Hoạt động tài chính'
-            : 'Khác'}
-        </span>
-      ),
-    },
-    {
-      title: 'Nợ (VND)',
-      dataIndex: 'debit',
-      key: 'debit',
-      align: 'right',
-      sorter: (a, b) => a.debit - b.debit,
-      width: 120,
-      render: (value) => {
-        return <span>{Intl.NumberFormat().format(value)}</span>
+  const columns = useMemo(
+    () => [
+      {
+        title: 'Ngày',
+        dataIndex: 'date',
+        key: 'date',
+        align: 'center',
+        sorter: (a, b) => moment(a.date) - moment(b.date),
+        width: 120,
+        render: (value) => <span>{moment(value).format('DD/MM/YYYY')}</span>,
       },
-    },
-    {
-      title: 'Có (VND)',
-      dataIndex: 'credit',
-      key: 'credit',
-      align: 'right',
-      sorter: (a, b) => a.credit - b.credit,
-      width: 120,
-      render: (value) => {
-        return <span>{Intl.NumberFormat().format(value)}</span>
+      {
+        title: 'Công ty chủ thể',
+        dataIndex: 'company',
+        key: 'company',
+        width: 350,
+        ...getColumnSearchProps('company'),
       },
-    },
-    {
-      title: 'Số dư (VND)',
-      dataIndex: 'balance',
-      key: 'balance',
-      align: 'right',
-      sorter: (a, b) => a.balance - b.balance,
-      width: 120,
-      render: (value) => {
-        return <span>{Intl.NumberFormat().format(value)}</span>
+      {
+        title: 'Loại',
+        dataIndex: 'type',
+        key: 'type',
+        align: 'center',
+        fixed: 'right',
+        filters: [
+          {
+            value: 'payable',
+            text: 'Phải trả',
+          },
+          {
+            value: 'receivable',
+            text: 'Phải thu',
+          },
+        ],
+        onFilter: (value, record) => record.type === value,
+        render: (state) => (
+          <Tag color={state === 'payable' ? 'red' : 'green'}>
+            {state === 'payable' ? 'Phải trả' : 'Phải thu'}
+          </Tag>
+        ),
       },
-    },
-    {
-      title: 'Lần cập nhật gần nhất',
-      dataIndex: 'updatedAt',
-      key: 'updatedAt',
-      align: 'center',
-      sorter: (a, b) => moment(a.updatedAt) - moment(b.updatedAt),
-      render: (value) => (
-        <span>{moment(value).format('DD/MM/YYYY HH:mm:ss')}</span>
-      ),
-    },
-    {
-      title: 'Người cập nhật gần nhất',
-      dataIndex: 'lastUpdatedBy',
-      align: 'center',
-      key: 'lastUpdatedBy',
-      width: 300,
-      ...getColumnSearchProps('lastUpdatedBy'),
-    },
-    {
-      title: 'Hành động',
-      align: 'center',
-      key: 'action',
-      fixed: 'right',
-      hidden:
-        (!checkRights('interCompanyFinance', ['write']) &&
-          !checkRights('interCompanyFinance', ['canDelete'])) ||
-        selectedRowKeys.length > 0,
-      width: 100,
-      render: (_) => (
-        <Space size="middle">
-          {checkRights('interCompanyFinance', ['write']) && (
-            <Tooltip title="Chỉnh sửa">
-              <Button
-                color="default"
-                variant="outlined"
-                size="small"
-                icon={<MdEdit />}
-                onClick={() => showModal(_)}
-              ></Button>
-            </Tooltip>
-          )}
-          {checkRights('interCompanyFinance', ['canDelete']) && (
-            <Tooltip title="Xóa">
-              <Button
-                color="danger"
-                size="small"
-                variant="filled"
-                icon={<MdDelete />}
-                onClick={() => handleDeleteRecord(_)}
-              ></Button>
-            </Tooltip>
-          )}
-        </Space>
-      ),
-    },
-  ]
-
-  const diffNotingColumns = [
-    {
-      title: 'Công ty A',
-      dataIndex: 'subjectA',
-      key: 'subjectA',
-      sorter: (a, b) => a.subjectA - b.subjectA,
-    },
-    {
-      title: 'Tài khoản A',
-      dataIndex: 'accountA',
-      key: 'accountA',
-      sorter: (a, b) => a.accountA - b.accountA,
-    },
-    {
-      title: 'Giá trị A (VNĐ)',
-      dataIndex: 'balanceA',
-      key: 'balanceA',
-      align: 'right',
-      sorter: (a, b) => a.balanceA - b.balanceA,
-      render: (value) => {
-        return <span>{Intl.NumberFormat().format(value)}</span>
+      {
+        title: 'Công ty đối tác',
+        dataIndex: 'counterpartCompany',
+        key: 'counterpartCompany',
+        width: 350,
+        ...getColumnSearchProps('counterpartCompany'),
       },
-    },
-    {
-      title: 'Công ty B',
-      dataIndex: 'subjectB',
-      key: 'subjectB',
-      sorter: (a, b) => a.subjectB - b.subjectB,
-    },
-    {
-      title: 'Tài khoản B',
-      dataIndex: 'accountB',
-      key: 'accountB',
-      sorter: (a, b) => a.accountB - b.accountB,
-    },
-    {
-      title: 'Giá trị B (VNĐ)',
-      dataIndex: 'balanceB',
-      key: 'balanceB',
-      align: 'right',
-      sorter: (a, b) => a.balanceB - b.balanceB,
-      render: (value) => {
-        return <span>{Intl.NumberFormat().format(value)}</span>
+      {
+        title: 'Tài khoản',
+        dataIndex: 'account',
+        key: 'account',
+        width: 100,
+        ...getColumnSearchProps('account'),
       },
-    },
-    {
-      title: 'Phần chênh lệch (VNĐ)',
-      dataIndex: 'delta',
-      key: 'delta',
-      align: 'right',
-      sorter: (a, b) => a.delta - b.delta,
-      render: (value) => {
-        return <span>{Intl.NumberFormat().format(value)}</span>
+      {
+        title: 'Nhóm hoạt động',
+        dataIndex: 'activityGroup',
+        key: 'activityGroup',
+        align: 'center',
+        fixed: 'right',
+        filters: [
+          {
+            value: 'business',
+            text: 'Hoạt động kinh doanh',
+          },
+          {
+            value: 'invest',
+            text: 'Hoạt động đầu tư',
+          },
+          {
+            value: 'finance',
+            text: 'Hoạt động tài chính',
+          },
+          {
+            value: 'others',
+            text: 'Khác',
+          },
+        ],
+        onFilter: (value, record) => record.activityGroup === value,
+        render: (state) => (
+          <Tag
+            color={
+              state === 'business'
+                ? 'blue'
+                : state === 'invest'
+                ? 'purple'
+                : state === 'finance'
+                ? 'gold'
+                : ''
+            }
+          >
+            {state === 'business'
+              ? 'Hoạt động kinh doanh'
+              : state === 'invest'
+              ? 'Hoạt động đầu tư'
+              : state === 'finance'
+              ? 'Hoạt động tài chính'
+              : 'Khác'}
+          </Tag>
+        ),
       },
-    },
-    {
-      title: 'Nhóm hoạt động',
-      dataIndex: 'activityGroup',
-      key: 'activityGroup',
-      align: 'center',
-      fixed: 'right',
-      filters: [
-        {
-          value: 'business',
-          text: 'Hoạt động kinh doanh',
+      {
+        title: 'Nợ (VND)',
+        dataIndex: 'debit',
+        key: 'debit',
+        align: 'right',
+        sorter: (a, b) => a.debit - b.debit,
+        width: 120,
+        render: (value) => {
+          return <span>{Intl.NumberFormat().format(value)}</span>
         },
-        {
-          value: 'invest',
-          text: 'Hoạt động đầu tư',
+      },
+      {
+        title: 'Có (VND)',
+        dataIndex: 'credit',
+        key: 'credit',
+        align: 'right',
+        sorter: (a, b) => a.credit - b.credit,
+        width: 120,
+        render: (value) => {
+          return <span>{Intl.NumberFormat().format(value)}</span>
         },
-        {
-          value: 'finance',
-          text: 'Hoạt động tài chính',
+      },
+      {
+        title: 'Số dư (VND)',
+        dataIndex: 'balance',
+        key: 'balance',
+        align: 'right',
+        sorter: (a, b) => a.balance - b.balance,
+        width: 120,
+        render: (value) => {
+          return <span>{Intl.NumberFormat().format(value)}</span>
         },
-        {
-          value: 'others',
-          text: 'Khác',
-        },
-      ],
-      onFilter: (value, record) => record.activityGroup === value,
-      render: (state) => (
-        <span>
-          {state === 'business'
-            ? 'Hoạt động kinh doanh'
-            : state === 'invest'
-            ? 'Hoạt động đầu tư'
-            : state === 'finance'
-            ? 'Hoạt động tài chính'
-            : 'Khác'}
-        </span>
-      ),
-    },
-  ]
+      },
+      {
+        title: 'Lần cập nhật gần nhất',
+        dataIndex: 'updatedAt',
+        key: 'updatedAt',
+        align: 'center',
+        sorter: (a, b) => moment(a.updatedAt) - moment(b.updatedAt),
+        render: (value) => (
+          <span>{moment(value).format('DD/MM/YYYY HH:mm:ss')}</span>
+        ),
+      },
+      {
+        title: 'Người cập nhật gần nhất',
+        dataIndex: 'lastUpdatedBy',
+        align: 'center',
+        key: 'lastUpdatedBy',
+        width: 250,
+        ...getColumnSearchProps('lastUpdatedBy'),
+      },
+      {
+        title: 'Hành động',
+        align: 'center',
+        key: 'action',
+        fixed: 'right',
+        hidden:
+          (!checkRights('interCompanyFinance', ['write']) &&
+            !checkRights('interCompanyFinance', ['canDelete'])) ||
+          selectedRowKeys.length > 0,
+        width: 100,
+        render: (_) => (
+          <Space size="middle">
+            {checkRights('interCompanyFinance', ['write']) && (
+              <Tooltip title="Chỉnh sửa">
+                <Button
+                  color="default"
+                  variant="outlined"
+                  size="small"
+                  icon={<MdEdit />}
+                  onClick={() => showModal(_)}
+                ></Button>
+              </Tooltip>
+            )}
+            {checkRights('interCompanyFinance', ['canDelete']) && (
+              <Tooltip title="Xóa">
+                <Button
+                  color="danger"
+                  size="small"
+                  variant="filled"
+                  icon={<MdDelete />}
+                  onClick={() => handleDeleteRecord(_)}
+                ></Button>
+              </Tooltip>
+            )}
+          </Space>
+        ),
+      },
+    ],
+    [searchedColumn, searchText, selectedRowKeys, checkRights]
+  )
 
-  function findDebtDiscrepancies(debts) {
-    const discrepancies = []
-    const used = new Set()
-
-    debts.forEach((entry) => {
-      const { id, subject, partner, balance, type, activityGroup } = entry
-
-      // Tạo khóa tìm kiếm ngược
-      const counterpartKey = `${partner}|${subject}|${activityGroup}|${
-        type === 'payable' ? 'receivable' : 'payable'
-      }`
-
-      // Bỏ qua nếu đã xét cặp này
-      const currentKey = `${subject}|${partner}|${activityGroup}|${type}`
-      if (used.has(currentKey) || used.has(counterpartKey)) return
-
-      // Tìm counterpart
-      const counterpart = debts.find(
-        (e) =>
-          e.subject === partner &&
-          e.partner === subject &&
-          e.activityGroup === activityGroup &&
-          e.type !== type
-      )
-
-      if (!counterpart) {
-        discrepancies.push({
-          subjectA: subject,
-          subjectB: partner,
-          activityGroup,
-          balanceA: balance,
-          balanceB: 0,
-          delta: balance,
-          idA: id,
-          idB: null,
-        })
-      } else if (balance !== counterpart.balance) {
-        discrepancies.push({
-          subjectA: subject,
-          subjectB: partner,
-          activityGroup,
-          balanceA: balance,
-          balanceB: counterpart.balance,
-          delta: Math.abs(balance - counterpart.balance),
-          idA: id,
-          idB: counterpart.id,
-        })
-      }
-
-      // Đánh dấu đã xét
-      used.add(currentKey)
-      used.add(counterpartKey)
-    })
-
-    return discrepancies
-  }
-
-  const processData = (raw) => {
-    return raw.map((item) => {
-      return {
-        date: item.date,
-        id: item._id,
-        subject:
-          item.subjectCompanyId?.shortname || item.subjectCompanyId?.name,
-        partner:
-          item.counterpartCompanyId?.shortname ||
-          item.counterpartCompanyId?.name,
-        balance: Math.abs(item.debit - item.credit),
-        debit: item.debit,
-        credit: item.credit,
-        type: item.type,
-        activityGroup: item.activityGroup,
-      }
-    })
-  }
-
-  const diffDebts = findDebtDiscrepancies(processData(interCompanyFinances))
-
-  const handleDateFilter = (date) => {
-    if (!date || date.length === 0) {
-      setFilteredData(diffDebts)
-    } else {
-      const filtered = interCompanyFinances.filter((item) => {
-        const startDay = dayjs(date, 'DD/MM/YYYY')
-        const endDay = dayjs(date, 'DD/MM/YYYY')
-        const dueDateFormat = dayjs(item.date)
-        return dueDateFormat.isBetween(startDay, endDay, 'day', '[]')
-      })
-      setFilteredData(findDebtDiscrepancies(processData(filtered)))
-    }
-  }
-
-  const handleDateRangeFilter = (dates) => {
-    if (!dates || dates.length === 0) {
-      setFilteredInterCompanyFinances(interCompanyFinances)
-    } else {
-      const [start, end] = dates
-      const filtered = interCompanyFinances.filter((item) => {
-        const startDay = dayjs(start, 'DD/MM/YYYY')
-        const endDay = dayjs(end, 'DD/MM/YYYY')
-        const dueDateFormat = dayjs(item.date)
-        return dueDateFormat.isBetween(startDay, endDay, 'day', '[]')
-      })
-      setFilteredInterCompanyFinances(filtered)
-    }
-  }
-
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = useCallback(async () => {
     if (!window.confirm('Bạn có chắc muốn xóa tất cả dữ liệu đã chọn?')) return
     setIsProcessing(true)
     const list = [...selectedRowKeys].map((i) => {
@@ -800,26 +627,93 @@ const InterCompanyFinance = () => {
       setInterCompanyFinances(newSources)
       setInterCompanyFinanceState(newSources)
       setFilteredInterCompanyFinances(filteredNewSources)
+      applyFilters(companyFilter, dateRangeFilter)
       setSelectedRowKeys([])
     } catch (error) {
       alert(error?.response?.data?.msg || error)
     } finally {
       setIsProcessing(false)
     }
-  }
+  }, [
+    selectedRowKeys,
+    interCompanyFinances,
+    filteredInterCompanyFinances,
+    setInterCompanyFinances,
+    setInterCompanyFinanceState,
+    setFilteredInterCompanyFinances,
+    companyFilter,
+    dateRangeFilter,
+  ])
 
-  const rowSelection = {
-    onChange: (mySelectedRows) => {
-      setSelectedRowKeys(mySelectedRows)
+  // Combined filter logic
+  const applyFilters = useCallback(
+    (companies, dateRange) => {
+      let filtered = currentInterCompanyFinances
+      if (companies) {
+        if (companies.length === 1) {
+          filtered = filtered.filter(
+            (i) =>
+              companies.includes(i.subjectCompanyId?._id) ||
+              companies.includes(i.counterpartCompanyId?._id)
+          )
+        } else if (companies.length > 1) {
+          filtered = filtered.filter(
+            (i) =>
+              companies.includes(i.subjectCompanyId?._id) &&
+              companies.includes(i.counterpartCompanyId?._id)
+          )
+        }
+      }
+      if (dateRange && dateRange.length === 2 && dateRange[0] && dateRange[1]) {
+        const [start, end] = dateRange
+        filtered = filtered.filter((item) => {
+          const dueDateFormat = dayjs(item.date)
+          return dueDateFormat.isBetween(
+            dayjs(start, 'DD/MM/YYYY'),
+            dayjs(end, 'DD/MM/YYYY'),
+            'day',
+            '[]'
+          )
+        })
+      }
+      setFilteredInterCompanyFinances(filtered)
     },
-  }
+    [interCompanyFinances]
+  )
+
+  const handleChangeCompanyFilter = useCallback(
+    (value) => {
+      setCompanyFilter(value)
+      applyFilters(value, dateRangeFilter)
+    },
+    [applyFilters, dateRangeFilter]
+  )
+
+  const handleDateRangeFilter = useCallback(
+    (dates) => {
+      setDateRangeFilter(dates)
+      applyFilters(companyFilter, dates)
+    },
+    [applyFilters, companyFilter]
+  )
+
+  const rowSelection = useMemo(
+    () => ({
+      onChange: (mySelectedRows) => {
+        setSelectedRowKeys(mySelectedRows)
+      },
+    }),
+    []
+  )
 
   useEffect(() => {
     if (currentInterCompanyFinances.length > 0) {
       setInterCompanyFinances(currentInterCompanyFinances)
       setFilteredInterCompanyFinances(currentInterCompanyFinances)
+      applyFilters(companyFilter, dateRangeFilter)
     }
-  }, [])
+    // eslint-disable-next-line
+  }, [currentInterCompanyFinances])
 
   return (
     <>
@@ -897,6 +791,44 @@ const InterCompanyFinance = () => {
                       </Button>
                     )}
                   </Space.Compact>
+                  <div>
+                    <Space
+                      style={{
+                        marginBottom: 16,
+                        display: 'flex',
+                        width: '100%',
+                      }}
+                    >
+                      <span
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          marginRight: 10,
+                          fontWeight: 500,
+                        }}
+                      >
+                        <IoFilterSharp />
+                        <span>Bộ lọc</span>
+                      </span>
+                      <RangePicker onChange={handleDateRangeFilter} />
+                      <Select
+                        mode="multiple"
+                        allowClear
+                        showSearch
+                        style={{ minWidth: '300px' }}
+                        onChange={handleChangeCompanyFilter}
+                        value={companyFilter}
+                        placeholder="Hãy chọn công ty để lọc"
+                        options={companies.map((i) => {
+                          return {
+                            label: i.shortname,
+                            value: i._id,
+                          }
+                        })}
+                      />
+                    </Space>
+                  </div>
                   <Table
                     columns={columns}
                     rowSelection={rowSelection}
@@ -945,27 +877,7 @@ const InterCompanyFinance = () => {
                   )}
                 </>
               ) : id === '2' ? (
-                <>
-                  <DatePicker
-                    onChange={handleDateFilter}
-                    placeholder="Chọn ngày để lọc"
-                    style={{ width: 200, marginBottom: 20 }}
-                  />
-                  <Table
-                    columns={diffNotingColumns}
-                    dataSource={filteredData.map((i) => {
-                      return {
-                        ...i,
-                        accountA: interCompanyFinances.find(
-                          (item) => item._id === i.idA
-                        )?.account,
-                        accountB: interCompanyFinances.find(
-                          (item) => item._id === i.idB
-                        )?.account,
-                      }
-                    })}
-                  />
-                </>
+                <InterCompanyFinanceList />
               ) : (
                 <InterCompanyFinanceChart data={interCompanyFinances} />
               ),

@@ -658,6 +658,7 @@ const dataCtrl = {
         counterpartCompanyId,
         type,
         activityGroup,
+        account,
       })
 
       if (req.user.companyIds.indexOf(subjectCompanyId) === -1)
@@ -682,7 +683,7 @@ const dataCtrl = {
 
       if (existingRecord)
         return res.status(400).json({
-          msg: 'Đã có tồn tại dữ liệu ghi nhận công nợ liên quan 2 công ty đó và loại, nhóm hoạt động, ngày',
+          msg: 'Đã có tồn tại dữ liệu ghi nhận công nợ liên quan 2 công ty đó và loại, nhóm hoạt động, ngày, tài khoản',
         })
       await InterCompanyFinances.create({
         subjectCompanyId,
@@ -721,6 +722,7 @@ const dataCtrl = {
         subjectCompanyId: parameters.subjectCompanyId,
         counterpartCompanyId: parameters.counterpartCompanyId,
         type: parameters.type,
+        account: parameters.account,
         activityGroup: parameters.activityGroup,
       })
 
@@ -744,7 +746,7 @@ const dataCtrl = {
 
       if (existingRecord)
         return res.status(400).json({
-          msg: 'Đã có tồn tại dữ liệu ghi nhận công nợ liên quan 2 công ty đó và loại, nhóm hoạt động, ngày',
+          msg: 'Đã có tồn tại dữ liệu ghi nhận công nợ liên quan 2 công ty đó và loại, nhóm hoạt động, ngày, tài khoản',
         })
 
       const newOne = await InterCompanyFinances.findOneAndUpdate(

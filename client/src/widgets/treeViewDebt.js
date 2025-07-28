@@ -137,7 +137,29 @@ const TreeViewDebt = ({ raw }) => {
       return dueDateFormat.isBetween(startDay, endDay, 'day', '[]')
     })
 
-    const netDebts = handleNetOffByGroup(filtered)
+    // Để xử lý trường hợp đầu tư
+    let processedData = [...filtered]
+    let investedData = filtered.filter(
+      (i) => i.activityGroup === 'invest' && i.type === 'payable'
+    )
+
+    investedData.forEach((i) => {
+      processedData = processedData.map((item) => {
+        const { activityGroup, partner, subject, type } = item
+        if (
+          type === 'receivable' &&
+          activityGroup === 'invest' &&
+          partner === i.subject &&
+          subject === i.partner
+        ) {
+          return { ...item, balance: i.balance }
+        } else {
+          return item
+        }
+      })
+    })
+
+    const netDebts = handleNetOffByGroup(processedData)
     const startCompany = companies.find(
       (company) => company._id === selectedCompany
     )

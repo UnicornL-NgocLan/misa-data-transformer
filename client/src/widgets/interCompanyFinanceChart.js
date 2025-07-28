@@ -11,23 +11,52 @@ import TreeViewDebt from './treeViewDebt'
 
 const InterCompanyFinanceChart = ({ data }) => {
   const [filteredData2, setFilteredData2] = useState([])
+
   const processData = (raw) => {
-    return raw.map((item) => {
+    let processedRawData = []
+    raw.forEach((item) => {
+      const alreadyProcessedItem = processedRawData.find((i) => {
+        const dateCreated = dayjs(item.date).add(7, 'hour').format('YYYY-MM-DD')
+        const dateInput = dayjs(i.date).add(7, 'hour').format('YYYY-MM-DD')
+        return (
+          i.subjectCompanyId._id === item.subjectCompanyId._id &&
+          i.counterpartCompanyId._id === item.counterpartCompanyId._id &&
+          i.type === item.type &&
+          i.activityGroup === item.activityGroup &&
+          dateCreated === dateInput
+        )
+      })
+      if (alreadyProcessedItem) {
+        processedRawData = processedRawData.map((i) => {
+          if (i._id === alreadyProcessedItem._id) {
+            return {
+              ...i,
+              balance: i.balance + (item.debit - item.credit),
+            }
+          }
+          return i
+        })
+      } else {
+        processedRawData.push({
+          ...item,
+          balance: item.debit - item.credit,
+        })
+      }
+    })
+    const processed = processedRawData.map((item) => {
       return {
         date: item.date,
-        id: item._id,
         subject:
           item.subjectCompanyId?.shortname || item.subjectCompanyId?.name,
         partner:
           item.counterpartCompanyId?.shortname ||
           item.counterpartCompanyId?.name,
-        balance: Math.abs(item.debit - item.credit),
-        debit: item.debit,
-        credit: item.credit,
+        balance: Math.abs(item.balance),
         type: item.type,
         activityGroup: item.activityGroup,
       }
     })
+    return processed
   }
 
   const columns = [
@@ -122,7 +151,31 @@ const InterCompanyFinanceChart = ({ data }) => {
         const dueDateFormat = dayjs(item.date)
         return dueDateFormat.isBetween(startDay, endDay, 'day', '[]')
       })
-      setFilteredData2(handleNetOffByGroup(processData(filtered)))
+
+      const filteredData = processData(filtered)
+
+      // Để xử lý trường hợp đầu tư
+      let processedData = [...filteredData]
+      let investedData = filteredData.filter(
+        (i) => i.activityGroup === 'invest' && i.type === 'payable'
+      )
+
+      investedData.forEach((i) => {
+        processedData = processedData.map((item) => {
+          const { activityGroup, partner, subject, type } = item
+          if (
+            type === 'receivable' &&
+            activityGroup === 'invest' &&
+            partner === i.subject &&
+            subject === i.partner
+          ) {
+            return { ...item, balance: i.balance }
+          } else {
+            return item
+          }
+        })
+      })
+      setFilteredData2(handleNetOffByGroup(processedData))
     }
   }
 
@@ -149,9 +202,29 @@ const InterCompanyFinanceChart = ({ data }) => {
           <Table
             columns={columns}
             dataSource={filteredData2.map((i) => {
-              const respectiveData = getPreProcessedData(
-                processData(data)
-              ).find(
+              const filteredData = processData(data)
+              // Để xử lý trường hợp đầu tư
+              let processedData = [...filteredData]
+              let investedData = filteredData.filter(
+                (i) => i.activityGroup === 'invest' && i.type === 'payable'
+              )
+
+              investedData.forEach((i) => {
+                processedData = processedData.map((item) => {
+                  const { activityGroup, partner, subject, type } = item
+                  if (
+                    type === 'receivable' &&
+                    activityGroup === 'invest' &&
+                    partner === i.subject &&
+                    subject === i.partner
+                  ) {
+                    return { ...item, balance: i.balance }
+                  } else {
+                    return item
+                  }
+                })
+              })
+              const respectiveData = getPreProcessedData(processedData).find(
                 (item) =>
                   item.borrower === i.borrower &&
                   item.lender === i.lender &&
