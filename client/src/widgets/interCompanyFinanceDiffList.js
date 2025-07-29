@@ -162,7 +162,7 @@ const InterCompanyFinanceDiffList = () => {
             activityGroup,
             balanceA: balance,
             balanceB: counterpart.balance,
-            delta: Math.abs(balance - counterpart.balance),
+            delta: Math.abs(balance - counterpart?.balance),
             note: 'Không tìm thấy công ty nhận tiền đầu tư',
           })
         } else {
@@ -176,22 +176,23 @@ const InterCompanyFinanceDiffList = () => {
 
           let companyInvestedAmount = rspectiveChartelCapital?.value || 0
           if (
-            companyInvestedAmount !== Math.abs(balance + counterpart.balance)
+            companyInvestedAmount !== Math.abs(balance + counterpart?.balance)
           ) {
             discrepancies.push({
               subjectA: subject,
               subjectB: partner,
               activityGroup,
               balanceA: balance,
-              balanceB: counterpart.balance,
+              balanceB: counterpart?.balance,
               delta:
-                companyInvestedAmount - Math.abs(balance + counterpart.balance),
+                companyInvestedAmount -
+                Math.abs(balance + counterpart?.balance),
               note: `Công ty ${
                 companyInvested.shortname
               } có giá trị góp vốn điều lệ không khớp với số tiền đầu tư ghi nhận. Vốn điều lệ góp lý thuyết: ${Intl.NumberFormat().format(
                 companyInvestedAmount
               )}, Số tiền đầu tư ghi nhận: ${Intl.NumberFormat().format(
-                Math.abs(balance + counterpart.balance)
+                Math.abs(balance + counterpart?.balance)
               )}`,
             })
           }
