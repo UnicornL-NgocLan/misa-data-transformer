@@ -5,7 +5,8 @@ import { useZustand } from '../zustand'
 import { IoFilterSharp } from 'react-icons/io5'
 
 const InterCompanyFinanceDiffList = () => {
-  const { interCompanyFinances, companies, auth } = useZustand()
+  const { interCompanyFinances, companies, auth, chartelCapitalTransactions } =
+    useZustand()
   const [companyFilter, setCompanyFilter] = useState([])
   const [dateRangeFilter, setDateRangeFilter] = useState(undefined)
   const [filteredDiffDebts, setFilteredDiffDebts] = useState([])
@@ -103,9 +104,17 @@ const InterCompanyFinanceDiffList = () => {
               note: 'Không tìm thấy công ty nhận tiền đầu tư',
             })
           } else {
+            const counterpartCompanyShortname =
+              companyInvested?.shortname === subject ? partner : subject
+            const rspectiveChartelCapital = chartelCapitalTransactions.find(
+              (i) =>
+                i.company_id?._id === companyInvested._id &&
+                i.partner_id?.shortname === counterpartCompanyShortname
+            )
+
+            let companyInvestedAmount = rspectiveChartelCapital?.value || 0
             if (
-              companyInvested.chartelCapital !==
-              Math.abs(balance + counterpart.balance)
+              companyInvestedAmount !== Math.abs(balance + counterpart.balance)
             ) {
               discrepancies.push({
                 subjectA: subject,
@@ -114,12 +123,12 @@ const InterCompanyFinanceDiffList = () => {
                 balanceA: balance,
                 balanceB: counterpart.balance,
                 delta:
-                  companyInvested.chartelCapital -
+                  companyInvestedAmount -
                   Math.abs(balance + counterpart.balance),
                 note: `Công ty ${
                   companyInvested.shortname
                 } có vốn điều lệ không khớp với số tiền đầu tư ghi nhận. Vốn điều lệ: ${Intl.NumberFormat().format(
-                  companyInvested.chartelCapital
+                  companyInvestedAmount
                 )}, Số tiền đầu tư ghi nhận: ${Intl.NumberFormat().format(
                   Math.abs(balance + counterpart.balance)
                 )}`,
@@ -137,6 +146,58 @@ const InterCompanyFinanceDiffList = () => {
           })
         }
       }
+
+      if (activityGroup === 'invest') {
+        // Lấy công ty nhận tiền đầu tư
+        const companyInvested = companies.find((company) =>
+          type === 'receivable'
+            ? company.shortname === subject
+            : company.shortname === partner
+        )
+
+        if (!companyInvested) {
+          discrepancies.push({
+            subjectA: subject,
+            subjectB: partner,
+            activityGroup,
+            balanceA: balance,
+            balanceB: counterpart.balance,
+            delta: Math.abs(balance - counterpart.balance),
+            note: 'Không tìm thấy công ty nhận tiền đầu tư',
+          })
+        } else {
+          const counterpartCompanyShortname =
+            companyInvested?.shortname === subject ? partner : subject
+          const rspectiveChartelCapital = chartelCapitalTransactions.find(
+            (i) =>
+              i.company_id?._id === companyInvested._id &&
+              i.partner_id?.shortname === counterpartCompanyShortname
+          )
+
+          let companyInvestedAmount = rspectiveChartelCapital?.value || 0
+          if (
+            companyInvestedAmount !== Math.abs(balance + counterpart.balance)
+          ) {
+            discrepancies.push({
+              subjectA: subject,
+              subjectB: partner,
+              activityGroup,
+              balanceA: balance,
+              balanceB: counterpart.balance,
+              delta:
+                companyInvestedAmount - Math.abs(balance + counterpart.balance),
+              note: `Công ty ${
+                companyInvested.shortname
+              } có giá trị góp vốn điều lệ không khớp với số tiền đầu tư ghi nhận. Vốn điều lệ góp lý thuyết: ${Intl.NumberFormat().format(
+                companyInvestedAmount
+              )}, Số tiền đầu tư ghi nhận: ${Intl.NumberFormat().format(
+                Math.abs(balance + counterpart.balance)
+              )}`,
+            })
+          }
+        }
+      }
+
       used.add(currentKey)
       used.add(counterpartKey)
     })

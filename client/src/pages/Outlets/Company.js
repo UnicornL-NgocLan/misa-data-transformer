@@ -22,6 +22,7 @@ const Company = () => {
     setCompanyState,
     companyTypes: currentCompanyTypes,
     setCompanyTypeState,
+    chartelCapitalTransactions,
   } = useZustand()
 
   const columns = [
@@ -57,11 +58,11 @@ const Company = () => {
     },
     {
       title: 'Vốn điều lệ (VND)',
-      dataIndex: 'chartelCapital',
-      key: 'chartelCapital',
+      dataIndex: 'total',
+      key: 'total',
       align: 'right',
       width: 200,
-      sorter: (a, b) => a.chartelCapital - b.chartelCapital,
+      sorter: (a, b) => a.total - b.total,
       render: (value) => {
         return <span>{Intl.NumberFormat().format(value)}</span>
       },
@@ -221,10 +222,20 @@ const Company = () => {
                   dataSource={
                     checkRights('company', ['read'])
                       ? companies.map((i) => {
+                          const listOfRespectiveChartelCapital =
+                            chartelCapitalTransactions.filter(
+                              (item) => item.company_id?._id === i._id
+                            )
+                          let totalValue = 0
+
+                          for (const line of listOfRespectiveChartelCapital) {
+                            totalValue += line.value
+                          }
                           return {
                             ...i,
                             parentCompany: i?.parentId?.name,
                             companyTypeName: i?.companyType?.name,
+                            total: totalValue,
                           }
                         })
                       : []

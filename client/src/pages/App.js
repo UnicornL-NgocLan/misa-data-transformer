@@ -51,6 +51,7 @@ const App = () => {
     setLoanContractState,
     setInterCompanyFinanceState,
     setCompanyTypeState,
+    setChartelCapitalTransactionsState,
   } = useZustand()
   const [loading, setLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -215,6 +216,7 @@ const App = () => {
         app.get('/api/get-loan-contracts'),
         app.get('/api/get-inter-company-finances'),
         app.get('/api/get-company-types'),
+        app.get('/api/get-chartel-capital-transactions'),
       ])
 
       setUserState(result[0]?.data?.data)
@@ -230,6 +232,7 @@ const App = () => {
       setLoanContractState(result[10]?.data?.data)
       setInterCompanyFinanceState(result[11]?.data?.data)
       setCompanyTypeState(result[12]?.data?.data)
+      setChartelCapitalTransactionsState(result[13]?.data?.data)
     } catch (error) {
       alert(error?.response?.data?.msg || error)
     } finally {

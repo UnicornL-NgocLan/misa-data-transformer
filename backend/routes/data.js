@@ -57,6 +57,12 @@ router.post(
   checkRights('companyType', ['create']),
   dataCtrl.createCompanyType
 )
+router.post(
+  '/create-chartel-capital-transaction',
+  authenticate,
+  checkRights('company', ['write']),
+  dataCtrl.createChartelCapitalTransaction
+)
 
 router.patch(
   '/update-bank/:id',
@@ -112,6 +118,12 @@ router.patch(
   checkRights('companyType', ['write']),
   dataCtrl.updateCompanyType
 )
+router.patch(
+  '/update-chartel-capital-transaction/:id',
+  authenticate,
+  checkRights('company', ['write']),
+  dataCtrl.updateChartelCapitalTransaction
+)
 
 router.get('/get-companies', authenticate, dataCtrl.getCompanies)
 router.get('/get-banks', authenticate, dataCtrl.getBanks)
@@ -126,6 +138,11 @@ router.get(
   dataCtrl.getInterCompanyFinance
 )
 router.get('/get-company-types', authenticate, dataCtrl.getCompanyTypes)
+router.get(
+  '/get-chartel-capital-transactions',
+  authenticate,
+  dataCtrl.getChartelCaptitalTransaction
+)
 
 router.delete(
   '/delete-source/:id',
@@ -156,6 +173,13 @@ router.delete(
   authenticate,
   checkRights('companyType', ['canDelete']),
   dataCtrl.deleteCompanyType
+)
+
+router.delete(
+  '/delete-chartel-capital-transaction/:id',
+  authenticate,
+  checkRights('company', ['write']),
+  dataCtrl.deleteChartelCapitalTransaction
 )
 
 module.exports = router
