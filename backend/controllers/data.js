@@ -8,6 +8,7 @@ const LoanContracts = require('../models/loanContract')
 const InterCompanyFinances = require('../models/interCompanyFinance')
 const CompanyTypes = require('../models/companyType')
 const ChartelCapitalTransactions = require('../models/chartelCapitalTransaction')
+const Accounts = require('../models/account')
 const moment = require('moment-timezone')
 
 const dataCtrl = {
@@ -844,7 +845,6 @@ const dataCtrl = {
         return res.status(400).json({
           msg: 'Bạn không có quyền cập nhật vốn điều lệ cho công ty này',
         })
-      console.log(id)
       const newOne = await ChartelCapitalTransactions.findOneAndUpdate(
         { _id: id },
         { ...parameters },
@@ -873,9 +873,95 @@ const dataCtrl = {
   getChartelCaptitalTransaction: async (req, res) => {
     try {
       const chartelCapitalTransactions = await ChartelCapitalTransactions.find({
-        company_id: { $in: req.user.companyIds },
+        $or: [
+          { company_id: { $in: req.user.companyIds } },
+          { partner_id: { $in: req.user.companyIds } },
+        ],
       }).populate('company_id partner_id', 'name shortname')
       res.status(200).json({ data: chartelCapitalTransactions })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  createAccount: async (req, res) => {
+    try {
+      const { code, type, activityGroup } = req.body
+      if (!code || !type || !activityGroup)
+        return res
+          .status(400)
+          .json({ msg: 'Vui lòng cung cấp đầy đủ thông tin' })
+      const existingCode = await Accounts.findOne({ code })
+      if (existingCode)
+        return res.status(400).json({ msg: 'Tài khoản này đã tồn tại rồi!' })
+      await Accounts.create({
+        code,
+        type,
+        activityGroup,
+      })
+
+      res.status(200).json({ msg: 'Đã tạo hoàn tất tài khoản' })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  updateAccount: async (req, res) => {
+    try {
+      let parameters = { ...req.body }
+      const { id } = req.params
+      Object.keys(parameters).forEach((key) => {
+        if (parameters[key] === null) {
+          delete parameters[key]
+        }
+      })
+
+      const existingRecord = await Accounts.findOne({
+        _id: { $ne: id },
+        code: parameters.code,
+      })
+
+      if (existingRecord)
+        return res
+          .status(400)
+          .json({ msg: 'Đã tồn tại tài khoản với mã được cập nhật' })
+
+      const newOne = await Accounts.findOneAndUpdate(
+        { _id: id },
+        { ...parameters },
+        { new: true }
+      )
+      if (!newOne)
+        return res
+          .status(400)
+          .json({ msg: 'Tài khoản được cập nhật không có trong cơ sở dữ liệu' })
+      res.status(200).json({ msg: 'Đã cập nhật thành công' })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  deleteAccount: async (req, res) => {
+    try {
+      const { id } = req.params
+      const existingRecord = await InterCompanyFinances.findOne({
+        accountId: id,
+      })
+      if (existingRecord)
+        return res.status(400).json({
+          msg: 'Có ít nhất 1 chi tiết công nợ liên quan đến tài khoản này, vui lòng qua danh mục hệ thống công nợ để kiểm tra',
+        })
+      await Actions.findOneAndDelete({ _id: id })
+      res.status(200).json({ msg: 'Đã xóa thành công' })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  getAccounts: async (req, res) => {
+    try {
+      const accounts = await Accounts.find({})
+      res.status(200).json({ data: accounts })
     } catch (error) {
       res.status(500).json({ msg: error.message })
     }

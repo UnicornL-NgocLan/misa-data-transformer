@@ -60,7 +60,7 @@ router.post(
 router.post(
   '/create-chartel-capital-transaction',
   authenticate,
-  checkRights('company', ['write']),
+  checkRights('chartelCapital', ['create']),
   dataCtrl.createChartelCapitalTransaction
 )
 
@@ -121,7 +121,7 @@ router.patch(
 router.patch(
   '/update-chartel-capital-transaction/:id',
   authenticate,
-  checkRights('company', ['write']),
+  checkRights('chartelCapital', ['write']),
   dataCtrl.updateChartelCapitalTransaction
 )
 
@@ -174,11 +174,10 @@ router.delete(
   checkRights('companyType', ['canDelete']),
   dataCtrl.deleteCompanyType
 )
-
 router.delete(
   '/delete-chartel-capital-transaction/:id',
   authenticate,
-  checkRights('company', ['write']),
+  checkRights('chartelCapital', ['canDelete']),
   dataCtrl.deleteChartelCapitalTransaction
 )
 

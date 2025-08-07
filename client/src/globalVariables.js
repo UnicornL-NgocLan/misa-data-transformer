@@ -209,4 +209,5 @@ export const objectMapping = {
   loanContract: 'Hợp đồng vay',
   interCompanyFinance: 'Hệ thống công nợ',
   companyType: 'Khối công ty',
+  chartelCapital: 'Vốn điều lệ',
 }

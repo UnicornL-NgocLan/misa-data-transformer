@@ -231,19 +231,22 @@ const CompanyCreateModal = ({
     {
       key: '2',
       label: 'Vốn góp',
+      disabled: !checkRights('chartelCapital', ['read']),
       children:
         isModalOpen && isModalOpen._id ? (
           <>
-            <Button
-              color="primary"
-              variant="filled"
-              onClick={() => setIsModalChartelCapitalOpen(true)}
-              icon={<FiPlus />}
-              style={{ marginBottom: 16 }}
-              size="small"
-            >
-              Tạo
-            </Button>
+            {checkRights('chartelCapital', ['create']) && (
+              <Button
+                color="primary"
+                variant="filled"
+                onClick={() => setIsModalChartelCapitalOpen(true)}
+                icon={<FiPlus />}
+                style={{ marginBottom: 16 }}
+                size="small"
+              >
+                Tạo
+              </Button>
+            )}
             <Table
               columns={[
                 {
@@ -267,28 +270,32 @@ const CompanyCreateModal = ({
                   key: 'action',
                   fixed: 'right',
                   hidden:
-                    !checkRights('company', ['write']) &&
-                    !checkRights('company', ['create']),
+                    !checkRights('chartelCapital', ['write']) &&
+                    !checkRights('chartelCapital', ['canDelete']),
                   render: (_) => (
                     <Space size="middle">
-                      <Tooltip title="Chỉnh sửa">
-                        <Button
-                          color="default"
-                          variant="outlined"
-                          size="small"
-                          icon={<MdEdit />}
-                          onClick={() => setIsModalChartelCapitalOpen(_)}
-                        ></Button>
-                      </Tooltip>
-                      <Tooltip title="Xóa">
-                        <Button
-                          color="danger"
-                          size="small"
-                          variant="filled"
-                          icon={<MdDelete />}
-                          onClick={() => handleDeleteRecord(_)}
-                        ></Button>
-                      </Tooltip>
+                      {checkRights('chartelCapital', ['write']) && (
+                        <Tooltip title="Chỉnh sửa">
+                          <Button
+                            color="default"
+                            variant="outlined"
+                            size="small"
+                            icon={<MdEdit />}
+                            onClick={() => setIsModalChartelCapitalOpen(_)}
+                          ></Button>
+                        </Tooltip>
+                      )}
+                      {checkRights('chartelCapital', ['canDelete']) && (
+                        <Tooltip title="Xóa">
+                          <Button
+                            color="danger"
+                            size="small"
+                            variant="filled"
+                            icon={<MdDelete />}
+                            onClick={() => handleDeleteRecord(_)}
+                          ></Button>
+                        </Tooltip>
+                      )}
                     </Space>
                   ),
                 },

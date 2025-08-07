@@ -19,6 +19,7 @@ const Company = () => {
   const [loading, setLoading] = useState(false)
   const {
     companies: currentCompanies,
+    auth,
     setCompanyState,
     companyTypes: currentCompanyTypes,
     setCompanyTypeState,
@@ -61,6 +62,7 @@ const Company = () => {
       dataIndex: 'total',
       key: 'total',
       align: 'right',
+      hidden: !checkRights('chartelCapital', ['read']),
       width: 200,
       sorter: (a, b) => a.total - b.total,
       render: (value) => {
@@ -84,19 +86,22 @@ const Company = () => {
       key: 'action',
       width: 100,
       hidden: !checkRights('company', ['write']),
-      render: (_) => (
-        <Space size="middle">
-          <Tooltip title="Chỉnh sửa">
-            <Button
-              color="default"
-              variant="outlined"
-              size="small"
-              icon={<MdEdit />}
-              onClick={() => showModal(_)}
-            ></Button>
-          </Tooltip>
-        </Space>
-      ),
+      render: (_) =>
+        auth.companyIds.find((item) => {
+          return item === _._id
+        }) ? (
+          <Space size="middle">
+            <Tooltip title="Chỉnh sửa">
+              <Button
+                color="default"
+                variant="outlined"
+                size="small"
+                icon={<MdEdit />}
+                onClick={() => showModal(_)}
+              ></Button>
+            </Tooltip>
+          </Space>
+        ) : null,
     },
   ]
 
