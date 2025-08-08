@@ -9,6 +9,7 @@ const RightCreateModal = ({
   handleCancel,
   handleCreateRight,
   handleEditRight,
+  objectList,
 }) => {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
@@ -99,12 +100,21 @@ const RightCreateModal = ({
         >
           <Select
             showSearch
+            disabled={isModalOpen?._id}
             filterOption={(input, option) =>
               (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
             }
-            options={objects.map((i) => {
-              return { value: i._id, label: objectMapping[i.name] }
-            })}
+            options={objects
+              .filter((i) => {
+                return isModalOpen?._id
+                  ? i
+                  : !objectList.find(
+                      (item) => item.object === objectMapping[i.name]
+                    )
+              })
+              .map((i) => {
+                return { value: i._id, label: objectMapping[i.name] }
+              })}
           />
         </Form.Item>
         <Space.Compact style={{ display: 'flex' }}>

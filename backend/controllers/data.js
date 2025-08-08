@@ -638,12 +638,12 @@ const dataCtrl = {
         counterpartCompanyId,
         debit,
         credit,
-        activityGroup,
         type,
-        account,
+        activityGroup,
+        accountId,
         date,
       } = req.body
-      if (!subjectCompanyId || !activityGroup || !type || !date || !account)
+      if (!subjectCompanyId || !type || !activityGroup || !date || !accountId)
         return res
           .status(400)
           .json({ msg: 'Vui lòng cung cấp đầy đủ thông tin' })
@@ -660,7 +660,7 @@ const dataCtrl = {
         counterpartCompanyId,
         type,
         activityGroup,
-        account,
+        accountId,
       })
 
       if (req.user.companyIds.indexOf(subjectCompanyId) === -1)
@@ -687,14 +687,21 @@ const dataCtrl = {
         return res.status(400).json({
           msg: 'Đã có tồn tại dữ liệu ghi nhận công nợ liên quan 2 công ty đó và loại, nhóm hoạt động, ngày, tài khoản',
         })
+
+      const existingAccount = await Accounts.findOne({ _id: accountId })
+      if (!existingAccount)
+        return res
+          .status(400)
+          .json({ msg: 'Tài khoản kế toán không tồn tại trong hệ thống!' })
+
       await InterCompanyFinances.create({
         subjectCompanyId,
         counterpartCompanyId,
         type,
         activityGroup,
-        account,
         debit,
         credit,
+        accountId,
         date,
         lastUpdatedBy: req.user._id,
       })
@@ -724,7 +731,7 @@ const dataCtrl = {
         subjectCompanyId: parameters.subjectCompanyId,
         counterpartCompanyId: parameters.counterpartCompanyId,
         type: parameters.type,
-        account: parameters.account,
+        accountId: parameters.accountId,
         activityGroup: parameters.activityGroup,
       })
 
@@ -779,6 +786,7 @@ const dataCtrl = {
           'counterpartCompanyId subjectCompanyId',
           'name shortname taxCode'
         )
+        .populate('accountId')
       res.status(200).json({ data: interCompanyFinances })
     } catch (error) {
       res.status(500).json({ msg: error.message })
@@ -951,7 +959,7 @@ const dataCtrl = {
         return res.status(400).json({
           msg: 'Có ít nhất 1 chi tiết công nợ liên quan đến tài khoản này, vui lòng qua danh mục hệ thống công nợ để kiểm tra',
         })
-      await Actions.findOneAndDelete({ _id: id })
+      await Accounts.findOneAndDelete({ _id: id })
       res.status(200).json({ msg: 'Đã xóa thành công' })
     } catch (error) {
       res.status(500).json({ msg: error.message })

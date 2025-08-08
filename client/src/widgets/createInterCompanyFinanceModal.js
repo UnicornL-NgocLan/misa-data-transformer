@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Modal } from 'antd'
 import { Form, Select, Space } from 'antd'
 import app from '../axiosConfig'
-import { InputNumber, Input, DatePicker } from 'antd'
+import { InputNumber, DatePicker } from 'antd'
 import { useZustand } from '../zustand'
 import dayjs from 'dayjs'
 
@@ -13,7 +13,7 @@ const InterCompanyFinanceModal = ({
 }) => {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
-  const { companies, auth } = useZustand()
+  const { companies, auth, accounts } = useZustand()
 
   const handleOk = async () => {
     try {
@@ -25,7 +25,7 @@ const InterCompanyFinanceModal = ({
         credit,
         type,
         activityGroup,
-        account,
+        accountId,
         date,
       } = form.getFieldsValue()
       if (
@@ -33,7 +33,7 @@ const InterCompanyFinanceModal = ({
         !counterpartCompanyId ||
         !type ||
         !activityGroup ||
-        !account ||
+        !accountId ||
         !date
       )
         return alert('Vui lòng nhập đầy đủ thông tin')
@@ -50,7 +50,7 @@ const InterCompanyFinanceModal = ({
             type,
             activityGroup,
             credit: credit || 0,
-            account,
+            accountId,
             date,
           }
         )
@@ -62,7 +62,7 @@ const InterCompanyFinanceModal = ({
           type,
           credit,
           activityGroup,
-          account,
+          accountId,
           date,
         })
       }
@@ -92,7 +92,7 @@ const InterCompanyFinanceModal = ({
       form.setFieldValue('type', isModalOpen?.type)
       form.setFieldValue('activityGroup', isModalOpen?.activityGroup)
       form.setFieldValue('date', dayjs(isModalOpen?.date))
-      form.setFieldValue('account', isModalOpen?.account)
+      form.setFieldValue('accountId', isModalOpen?.accountId?._id)
     }
   }, [])
 
@@ -150,6 +150,39 @@ const InterCompanyFinanceModal = ({
         </Form.Item>
         <Space.Compact style={{ display: 'flex' }}>
           <Form.Item
+            name="accountId"
+            label="Tài khoản"
+            style={{ flex: 1 }}
+            rules={[{ required: true, message: 'Hãy nhập tài khoản!' }]}
+          >
+            <Select
+              showSearch
+              filterOption={(input, option) =>
+                (option?.label ?? '')
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
+              }
+              options={accounts.map((i) => {
+                return { value: i._id, label: i.code }
+              })}
+              onChange={(i) => {
+                const myAccount = accounts.find((item) => item._id === i)
+                form.setFieldValue('type', myAccount.type)
+                form.setFieldValue('activityGroup', myAccount.activityGroup)
+              }}
+            />
+          </Form.Item>
+          <Form.Item
+            name="date"
+            label="Ngày"
+            style={{ flex: 1 }}
+            rules={[{ required: true, message: 'Nhập ngày!' }]}
+          >
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+        </Space.Compact>
+        <Space.Compact style={{ display: 'flex' }}>
+          <Form.Item
             style={{ flex: 1 }}
             name="type"
             label="Loại"
@@ -190,24 +223,6 @@ const InterCompanyFinanceModal = ({
                 { value: 'others', label: 'Khác' },
               ]}
             />
-          </Form.Item>
-        </Space.Compact>
-        <Space.Compact style={{ display: 'flex' }}>
-          <Form.Item
-            name="account"
-            label="Tài khoản"
-            style={{ flex: 1 }}
-            rules={[{ required: true, message: 'Hãy nhập tài khoản!' }]}
-          >
-            <Input className="w-full" placeholder="331..." />
-          </Form.Item>
-          <Form.Item
-            name="date"
-            label="Ngày"
-            style={{ flex: 1 }}
-            rules={[{ required: true, message: 'Nhập ngày!' }]}
-          >
-            <DatePicker style={{ width: '100%' }} />
           </Form.Item>
         </Space.Compact>
         <Space.Compact style={{ display: 'flex' }}>

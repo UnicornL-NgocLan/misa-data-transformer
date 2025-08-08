@@ -19,6 +19,7 @@ import { IoDocument } from 'react-icons/io5'
 import { BsPiggyBankFill } from 'react-icons/bs'
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons'
 import { FaMoneyBill1Wave } from 'react-icons/fa6'
+import { MdAccountTree } from 'react-icons/md'
 import { IoSettings } from 'react-icons/io5'
 import useCheckRights from '../utils/checkRights'
 import { FaTools } from 'react-icons/fa'
@@ -52,6 +53,7 @@ const App = () => {
     setInterCompanyFinanceState,
     setCompanyTypeState,
     setChartelCapitalTransactionsState,
+    setAccountState,
   } = useZustand()
   const [loading, setLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -111,6 +113,15 @@ const App = () => {
       disabled: !checkRights('bankAccount', ['read']),
       onClick: () => {
         handleNavigate('/bank-account', 4)
+      },
+    },
+    {
+      key: 4.2,
+      icon: <MdAccountTree />,
+      label: 'Tài khoản kế toán',
+      disabled: !checkRights('account', ['read']),
+      onClick: () => {
+        handleNavigate('/account', 4.2)
       },
     },
     {
@@ -217,6 +228,7 @@ const App = () => {
         app.get('/api/get-inter-company-finances'),
         app.get('/api/get-company-types'),
         app.get('/api/get-chartel-capital-transactions'),
+        app.get('/api/get-accounts'),
       ])
 
       setUserState(result[0]?.data?.data)
@@ -233,6 +245,7 @@ const App = () => {
       setInterCompanyFinanceState(result[11]?.data?.data)
       setCompanyTypeState(result[12]?.data?.data)
       setChartelCapitalTransactionsState(result[13]?.data?.data)
+      setAccountState(result[14]?.data?.data)
     } catch (error) {
       alert(error?.response?.data?.msg || error)
     } finally {

@@ -63,6 +63,12 @@ router.post(
   checkRights('chartelCapital', ['create']),
   dataCtrl.createChartelCapitalTransaction
 )
+router.post(
+  '/create-account',
+  authenticate,
+  checkRights('account', ['create']),
+  dataCtrl.createAccount
+)
 
 router.patch(
   '/update-bank/:id',
@@ -124,6 +130,12 @@ router.patch(
   checkRights('chartelCapital', ['write']),
   dataCtrl.updateChartelCapitalTransaction
 )
+router.patch(
+  '/update-account/:id',
+  authenticate,
+  checkRights('account', ['write']),
+  dataCtrl.updateAccount
+)
 
 router.get('/get-companies', authenticate, dataCtrl.getCompanies)
 router.get('/get-banks', authenticate, dataCtrl.getBanks)
@@ -143,6 +155,7 @@ router.get(
   authenticate,
   dataCtrl.getChartelCaptitalTransaction
 )
+router.get('/get-accounts', authenticate, dataCtrl.getAccounts)
 
 router.delete(
   '/delete-source/:id',
@@ -179,6 +192,12 @@ router.delete(
   authenticate,
   checkRights('chartelCapital', ['canDelete']),
   dataCtrl.deleteChartelCapitalTransaction
+)
+router.delete(
+  '/delete-account/:id',
+  authenticate,
+  checkRights('account', ['canDelete']),
+  dataCtrl.deleteAccount
 )
 
 module.exports = router

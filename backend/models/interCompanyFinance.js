@@ -3,7 +3,6 @@ const mongoose = require('mongoose')
 const InterCompanyFinanceSchema = mongoose.Schema(
   {
     date: Date,
-    account: String,
     accountId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Account',

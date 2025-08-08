@@ -20,6 +20,7 @@ import LoanContract from './Outlets/LoanContract'
 import Tool from './Outlets/Tool'
 import InterCompanyFinance from './Outlets/InterCompanyFinance'
 import ProductSearchList from './ProductSearchList'
+import Account from './Outlets/Account'
 
 const Main = () => {
   const { auth, setAuth } = useZustand()
@@ -69,6 +70,7 @@ const Main = () => {
           <Route path="source" element={<Source />} />
           <Route path="tool" element={<Tool />} />
           <Route path="setting" element={<Setting />} />
+          <Route path="account" element={<Account />} />
           <Route
             path="inter-company-finance"
             element={<InterCompanyFinance />}

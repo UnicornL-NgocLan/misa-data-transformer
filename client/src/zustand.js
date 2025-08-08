@@ -16,6 +16,7 @@ export const useZustand = create((set) => ({
   interCompanyFinances: [],
   companyTypes: [],
   chartelCapitalTransactions: [],
+  accounts: [],
   setRightsState: (value) => set({ rights: value }),
   setAccessGroupState: (value) => set({ accessGroups: value }),
   setObjectsState: (value) => set({ objects: value }),
@@ -32,6 +33,7 @@ export const useZustand = create((set) => ({
   setCompanyTypeState: (value) => set({ companyTypes: value }),
   setChartelCapitalTransactionsState: (value) =>
     set({ chartelCapitalTransactions: value }),
+  setAccountState: (value) => set({ accounts: value }),
   logout: () =>
     set({
       auth: null,
@@ -48,5 +50,6 @@ export const useZustand = create((set) => ({
       interCompanyFinances: [],
       companyTypes: [],
       chartelCapitalTransactions: [],
+      accounts: [],
     }),
 }))

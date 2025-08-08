@@ -210,4 +210,5 @@ export const objectMapping = {
   interCompanyFinance: 'Hệ thống công nợ',
   companyType: 'Khối công ty',
   chartelCapital: 'Vốn điều lệ',
+  account: 'Tài khoản kế toán',
 }

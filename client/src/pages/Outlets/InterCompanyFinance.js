@@ -24,6 +24,7 @@ import { DatePicker } from 'antd'
 import { Select } from 'antd'
 import InterCompanyFinanceList from '../../widgets/interCompanyFinanceDiffList'
 import { IoFilterSharp } from 'react-icons/io5'
+import UploadMisaDebtModal from '../../widgets/uploadMisaDebtModal'
 const { RangePicker } = DatePicker
 
 const InterCompanyFinance = () => {
@@ -33,8 +34,10 @@ const InterCompanyFinance = () => {
     setInterCompanyFinanceState,
     companies,
     auth,
+    accounts,
   } = useZustand()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isModalUploadMisaOpen, setIsModalUploadMisaOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [loading, setLoading] = useState(false)
   const [searchedColumn, setSearchedColumn] = useState('')
@@ -55,6 +58,7 @@ const InterCompanyFinance = () => {
 
   const handleCancel = useCallback(() => {
     setIsModalOpen(false)
+    setIsModalUploadMisaOpen(false)
   }, [])
 
   const handleSearch = useCallback((selectedKeys, confirm, dataIndex) => {
@@ -176,7 +180,7 @@ const InterCompanyFinance = () => {
     [searchText, searchedColumn]
   )
 
-  const handleFetchInterCompanyFinances = useCallback(async () => {
+  const handleFetchInterCompanyFinances = async () => {
     try {
       const { data } = await app.get('/api/get-inter-company-finances')
       setInterCompanyFinances(data.data)
@@ -186,7 +190,7 @@ const InterCompanyFinance = () => {
     } catch (error) {
       alert(error?.response?.data?.msg || error)
     }
-  }, [companyFilter, dateRangeFilter])
+  }
 
   const handleExportExcel = useCallback(() => {
     setIsProcessing(true)
@@ -204,9 +208,11 @@ const InterCompanyFinance = () => {
           createdAt: add7Hours(i.createdAt),
           date: add7Hours(i.date),
           subjectCompanyName: i.subjectCompanyId?.name,
+          account: i.accountId?.code,
           counterpartCompanyName: i.counterpartCompanyId?.name,
         }
         delete object.__v
+        delete object.accountId
         return object
       }),
       fileName: 'Dữ liệu hệ thống nợ',
@@ -237,6 +243,7 @@ const InterCompanyFinance = () => {
         setInterCompanyFinances(newSources)
         setInterCompanyFinanceState(newSources)
         setFilteredInterCompanyFinances(newSources)
+        if (newSources.length === 0) return
         applyFilters(companyFilter, dateRangeFilter)
       } catch (error) {
         alert(error?.response?.data?.msg || error)
@@ -321,6 +328,21 @@ const InterCompanyFinance = () => {
                 return false
               }
 
+              if (i.account.toString().length < 3) {
+                errorText += `Tài khoản phải ít nhất 3 ký tự.\n`
+                return false
+              }
+
+              if (
+                !accounts.find(
+                  (it) =>
+                    it.code.toString() === i.account.toString().substring(0, 3)
+                )
+              ) {
+                errorText += `3 ký tự đầu của tài khoản ${i.account} không có trong hệ thống\n`
+                return false
+              }
+
               if (!['payable', 'receivable'].find((e) => e === i.type)) {
                 errorText += `Loại phải là "Phải trả" hoặc "Phải thu". Vui lòng kiểm tra lại.\n`
                 return false
@@ -365,6 +387,11 @@ const InterCompanyFinance = () => {
                 (item) => item.taxCode === counterpartCompanyId
               )
 
+              const respectiveAccount = accounts.find(
+                (it) =>
+                  it.code.toString() === account.toString().substring(0, 3)
+              )
+
               const processedData = {
                 subjectCompanyId: newSubjectCompanyId._id,
                 counterpartCompanyId: newCounterpartCompanyId?._id,
@@ -373,7 +400,7 @@ const InterCompanyFinance = () => {
                 type,
                 activityGroup,
                 date,
-                account,
+                accountId: respectiveAccount._id,
               }
               return i._id
                 ? app.patch(
@@ -627,8 +654,9 @@ const InterCompanyFinance = () => {
       setInterCompanyFinances(newSources)
       setInterCompanyFinanceState(newSources)
       setFilteredInterCompanyFinances(filteredNewSources)
-      applyFilters(companyFilter, dateRangeFilter)
       setSelectedRowKeys([])
+      if (newSources.length === 0) return
+      applyFilters(companyFilter, dateRangeFilter)
     } catch (error) {
       alert(error?.response?.data?.msg || error)
     } finally {
@@ -759,6 +787,20 @@ const InterCompanyFinance = () => {
                     !checkRights('interCompanyFinance', ['write']) ? (
                       <></>
                     ) : (
+                      <Button
+                        color="primary"
+                        disabled={isProcessing}
+                        onClick={() => setIsModalUploadMisaOpen(true)}
+                        style={{ marginBottom: 16 }}
+                        icon={<FaUpload />}
+                      >
+                        Upload bằng mẫu MISA
+                      </Button>
+                    )}
+                    {!checkRights('interCompanyFinance', ['read']) &&
+                    !checkRights('interCompanyFinance', ['write']) ? (
+                      <></>
+                    ) : (
                       <div>
                         <input
                           type="file"
@@ -842,6 +884,7 @@ const InterCompanyFinance = () => {
                               return {
                                 ...i,
                                 balance: i.debit - i.credit,
+                                account: i.accountId?.code,
                                 company: i.subjectCompanyId?.name,
                                 counterpartCompany:
                                   i.counterpartCompanyId?.name,
@@ -873,6 +916,15 @@ const InterCompanyFinance = () => {
                       handleFetchInterCompanyFinances={
                         handleFetchInterCompanyFinances
                       }
+                    />
+                  )}
+                  {isModalUploadMisaOpen && (
+                    <UploadMisaDebtModal
+                      handleFetchInterCompanyFinances={
+                        handleFetchInterCompanyFinances
+                      }
+                      handleCancel={handleCancel}
+                      isModalUploadMisaOpen={isModalUploadMisaOpen}
                     />
                   )}
                 </>

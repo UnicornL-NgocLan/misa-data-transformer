@@ -109,7 +109,13 @@ const AccessGroupCreateModal = ({
           <Form.Item name="userIds" label="Người dùng thuộc nhóm quyền">
             <Select
               mode="tags"
+              showSearch
               maxTagCount="responsive"
+              filterOption={(input, option) =>
+                (option?.label ?? '')
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
+              }
               options={users
                 .filter((i) => i.role !== sysmtemUserRole.admin)
                 .map((i) => {
@@ -253,6 +259,14 @@ const AccessGroupCreateModal = ({
           handleCancel={() => setIsModalRightOpen(false)}
           handleCreateRight={handleCreateRight}
           handleEditRight={handleEditRight}
+          objectList={rights.map((i) => {
+            return {
+              ...i,
+              object:
+                i.object ||
+                (i.objectId?.name ? objectMapping[i.objectId?.name] : ''),
+            }
+          })}
         />
       )}
     </Modal>
