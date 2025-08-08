@@ -34,10 +34,6 @@ const Login = () => {
     }
   }
 
-  const handleClickToMisaDataTransformer = () => {
-    window.open('/misa-data-transformer', '_blank')
-  }
-
   return (
     <div
       style={{

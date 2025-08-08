@@ -9,6 +9,7 @@ import { Form } from 'antd'
 import { validExcelFile } from '../globalVariables'
 import { DatePicker } from 'antd'
 import { Select } from 'antd'
+import { FaBook } from 'react-icons/fa'
 
 const UploadMisaDebtModal = ({
   isModalUploadMisaOpen,
@@ -203,6 +204,20 @@ const UploadMisaDebtModal = ({
       onOk={handleOk}
       onCancel={handleClose}
     >
+      <Button
+        color="primary"
+        variant="filled"
+        onClick={() => {
+          window.open(
+            'https://sdrive.seacorp.vn/f/ca4abb19af4f46c189aa/',
+            '_blank'
+          )
+        }}
+        style={{ marginBottom: 16 }}
+        icon={<FaBook />}
+      >
+        Đọc hướng dẫn
+      </Button>
       <Form
         form={form}
         name="dynamic_ruleEdit"

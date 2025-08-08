@@ -1,64 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useZustand } from '../zustand'
-import { DatePicker, Select, Space, Button } from 'antd'
+import { DatePicker, Select, Space, Button, Tooltip } from 'antd'
 import { ReactHiererchyChart } from 'react-hierarchy-chart'
 import './treeView.css'
 import { handleNetOffByGroup } from '../utils/getNetOffDebts'
 import dayjs from 'dayjs'
-
-const nodes = [
-  {
-    key: '122',
-    name: 'Caleb Matthews',
-    cssClass: 'level1',
-    childs: [
-      {
-        key: '132',
-        name: 'Antonia Sancho',
-        cssClass: 'level2',
-      },
-      {
-        key: '123',
-        name: 'Thoms Hilty',
-        cssClass: 'level2',
-        childs: [
-          {
-            key: '124',
-            name: 'Eyal Matthews',
-            cssClass: 'level3',
-          },
-          {
-            key: '125',
-            name: 'Adam Mark',
-            cssClass: 'level3',
-          },
-        ],
-      },
-      {
-        key: '162',
-        name: 'Barry Roy',
-        cssClass: 'level2',
-        childs: [
-          {
-            key: '127',
-            name: 'Ligia Opera',
-            cssClass: 'level3',
-          },
-          {
-            key: '128',
-            name: 'Moran Perry',
-            cssClass: 'level3',
-          },
-        ],
-      },
-    ],
-  },
-]
+import { InputNumber } from 'antd'
 
 const TreeViewDebt = ({ raw }) => {
   const [selectedCompany, setSelectedCompany] = useState(null)
   const [filteredData, setFilteredData] = useState([])
   const [selectedDate, setSelectedDate] = useState(null)
+  const [expectedNumber, setExpectedNumber] = useState(0)
   const { companies } = useZustand()
 
   const handleSelectCompany = (value) => {
@@ -188,6 +141,26 @@ const TreeViewDebt = ({ raw }) => {
           placeholder="Chọn ngày để lọc"
           style={{ width: 200 }}
         />
+        <InputNumber
+          inputMode="decimal"
+          placeholder="Nhập số tiền muốn huy động"
+          style={{ width: 220 }}
+          value={expectedNumber}
+          onChange={(value) => {
+            setExpectedNumber(value)
+          }}
+          formatter={(value) =>
+            value
+              ? value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') // thousands with comma
+              : ''
+          }
+          parser={(value) =>
+            value
+              ? parseFloat(value.toString().replace(/,/g, '')) // remove commas
+              : 0
+          }
+          min={0}
+        />
         <Button color="primary" variant="solid" onClick={handleGenerateChart}>
           Xem biểu đồ
         </Button>
@@ -198,47 +171,58 @@ const TreeViewDebt = ({ raw }) => {
           direction="horizontal"
           randerNode={(node) => {
             return (
-              <div className="node-template">
-                <strong>
-                  {node.name} {node.note && '🚫'}
-                </strong>
-                {node.totalAmount ? (
-                  <span>
-                    Tổng nợ:{' '}
-                    {node.totalAmount.toLocaleString('vi-VN', {
-                      style: 'currency',
-                      currency: 'VND',
-                    })}
-                  </span>
-                ) : null}
-                {node.activityGroups ? (
+              <Tooltip
+                open={node.totalAmount ? undefined : false}
+                title={
                   <div>
-                    <ul style={{ margin: 0, paddingRight: 20 }}>
-                      {Object.entries(node.activityGroups).map(
-                        ([group, amount], index) => (
-                          <li
-                            key={index}
-                            style={{ margin: 0, textAlign: 'left' }}
-                          >
-                            {group === 'business'
-                              ? 'Kinh doanh'
-                              : group === 'invest'
-                              ? 'Đầu tư'
-                              : group === 'finance'
-                              ? 'Tài chính'
-                              : 'Khác'}
-                            :{' '}
-                            {amount.toLocaleString('vi-VN', {
-                              style: 'currency',
-                              currency: 'VND',
-                            })}
-                          </li>
-                        )
-                      )}
-                    </ul>
+                    {node.totalAmount ? (
+                      <span>
+                        Tổng nợ:{' '}
+                        {node.totalAmount.toLocaleString('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND',
+                        })}
+                      </span>
+                    ) : null}
+                    {node.activityGroups ? (
+                      <div>
+                        <ul style={{ margin: 0, paddingRight: 20 }}>
+                          {Object.entries(node.activityGroups).map(
+                            ([group, amount], index) => (
+                              <li
+                                key={index}
+                                style={{ margin: 0, textAlign: 'left' }}
+                              >
+                                {group === 'business'
+                                  ? 'Kinh doanh'
+                                  : group === 'invest'
+                                  ? 'Đầu tư'
+                                  : group === 'finance'
+                                  ? 'Tài chính'
+                                  : 'Khác'}
+                                :{' '}
+                                {amount.toLocaleString('vi-VN', {
+                                  style: 'currency',
+                                  currency: 'VND',
+                                })}
+                              </li>
+                            )
+                          )}
+                        </ul>
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
-              </div>
+                }
+              >
+                <div className="node-template">
+                  <strong>
+                    {node.name} {node.note && '🚫'}{' '}
+                    {node.totalAmount &&
+                      node.totalAmount >= expectedNumber &&
+                      '✅'}
+                  </strong>
+                </div>
+              </Tooltip>
             )
           }}
         />
