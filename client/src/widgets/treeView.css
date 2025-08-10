@@ -16,13 +16,11 @@
 
 h1 {
     text-align: center;
-    margin-bottom: 10px;
 }
 
 .hierarchy-viewer {
     display: block;
-    margin: 20px;
-    padding: 15px;
+    padding: 15px 0;
 }
 
 .level1 {
