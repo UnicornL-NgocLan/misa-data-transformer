@@ -295,7 +295,6 @@ const TreeViewDebt = ({ raw }) => {
                               size="small"
                               type="text"
                               onClick={toggleCollapsed}
-                              style={{ marginLeft: 6 }}
                             >
                               {collapsedNodes[node.key] ? '➕' : '➖'}
                             </Button>
