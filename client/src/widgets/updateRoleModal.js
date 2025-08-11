@@ -16,8 +16,16 @@ const UpdateRoleModal = ({
 
   const handleOk = () => {
     if (loading) return
-    const { role, companyIds, name, username, joiningDate, birthdate, code } =
-      form.getFieldsValue()
+    const {
+      role,
+      companyIds,
+      name,
+      username,
+      joiningDate,
+      birthdate,
+      code,
+      resigningDate,
+    } = form.getFieldsValue()
     if (!role.trim() || !name.trim() || !username.trim())
       return alert('Vui lòng nhập đầy đủ thông tin')
     handleUpdateRole(
@@ -28,7 +36,8 @@ const UpdateRoleModal = ({
       username,
       joiningDate,
       birthdate,
-      code
+      code,
+      resigningDate
     )
   }
 
@@ -50,6 +59,10 @@ const UpdateRoleModal = ({
     form.setFieldValue(
       'birthdate',
       isModalOpen?.birthdate ? dayjs(isModalOpen?.birthdate) : null
+    )
+    form.setFieldValue(
+      'resigningDate',
+      isModalOpen?.resigningDate ? dayjs(isModalOpen?.resigningDate) : null
     )
   }, [])
 
@@ -97,6 +110,13 @@ const UpdateRoleModal = ({
           <Form.Item
             name="joiningDate"
             label="Ngày vào làm"
+            style={{ flex: 1 }}
+          >
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item
+            name="resigningDate"
+            label="Ngày nghỉ việc"
             style={{ flex: 1 }}
           >
             <DatePicker style={{ width: '100%' }} />

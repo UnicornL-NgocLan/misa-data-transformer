@@ -65,7 +65,8 @@ const User = () => {
     username,
     joiningDate,
     birthdate,
-    code
+    code,
+    resigningDate
   ) => {
     try {
       if (loading) return
@@ -78,6 +79,7 @@ const User = () => {
         joiningDate,
         birthdate,
         code,
+        resigningDate,
       })
       await handleFetchUsers()
       handleCancel()
@@ -240,6 +242,16 @@ const User = () => {
       key: 'joiningDate',
       align: 'right',
       sorter: (a, b) => moment(a.joiningDate) - moment(b.joiningDate),
+      render: (value) => (
+        <span>{value ? moment(value).format('DD/MM/YYYY') : undefined}</span>
+      ),
+    },
+    {
+      title: 'Ngày nghỉ việc',
+      dataIndex: 'resigningDate',
+      key: 'resigningDate',
+      align: 'right',
+      sorter: (a, b) => moment(a.resigningDate) - moment(b.resigningDate),
       render: (value) => (
         <span>{value ? moment(value).format('DD/MM/YYYY') : undefined}</span>
       ),

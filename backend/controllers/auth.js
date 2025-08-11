@@ -52,6 +52,7 @@ const userCtrl = {
         birthdate,
         code,
         joiningDate,
+        resigningDate,
       } = req.body
       if (!username.trim() || !password.trim())
         return res
@@ -71,6 +72,7 @@ const userCtrl = {
         birthdate,
         code,
         joiningDate,
+        resigningDate,
       })
 
       res.status(200).json({ msg: 'Đã tạo hoàn tất người dùng' })
@@ -82,7 +84,7 @@ const userCtrl = {
   getUsers: async (req, res) => {
     try {
       const users = await Users.find({}).select(
-        'username name active role companyIds birthdate code joiningDate'
+        'username name active role companyIds birthdate code joiningDate resigningDate'
       )
       res.status(200).json({ data: users })
     } catch (error) {
@@ -99,7 +101,10 @@ const userCtrl = {
       if (user && user.role === 'admin' && req.user.role !== 'admin')
         return res.status(400).json({ msg: 'Không được phép tác động admin' })
       if (parameters.code) {
-        const existingUser = await Users.findOne({ code: parameters.code })
+        const existingUser = await Users.findOne({
+          code: parameters.code,
+          _id: { $ne: id },
+        })
         if (existingUser)
           return res
             .status(400)

@@ -10,6 +10,7 @@ const UserSchema = mongoose.Schema(
     code: { type: String, unique: true },
     birthdate: Date,
     joiningDate: Date,
+    resigningDate: Date,
     role: { type: String, default: 'basic' },
   },
   { timestamps: true }

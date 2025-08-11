@@ -27,6 +27,7 @@ const CreateUserModal = ({
         joiningDate,
         birthdate,
         code,
+        resigningDate,
       } = form.getFieldsValue()
       if (
         !role?.trim() ||
@@ -45,6 +46,7 @@ const CreateUserModal = ({
         joiningDate,
         birthdate,
         code,
+        resigningDate,
       })
       await handleFetchUsers()
       handleClose()
@@ -121,6 +123,13 @@ const CreateUserModal = ({
           <Form.Item
             name="joiningDate"
             label="Ngày vào làm"
+            style={{ flex: 1 }}
+          >
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item
+            name="resigningDate"
+            label="Ngày nghỉ việc"
             style={{ flex: 1 }}
           >
             <DatePicker style={{ width: '100%' }} />
