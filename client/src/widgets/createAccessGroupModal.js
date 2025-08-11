@@ -95,7 +95,7 @@ const AccessGroupCreateModal = ({
               name="name"
               label="Tên nhóm quyền"
               style={{ flex: 1 }}
-              rules={[{ required: true, message: 'Hãy nhập tên ngân hàng!' }]}
+              rules={[{ required: true, message: 'Hãy nhập tên nhóm quyền!' }]}
             >
               <Input className="w-full" placeholder="Tên nhóm quyền" />
             </Form.Item>
@@ -108,16 +108,15 @@ const AccessGroupCreateModal = ({
           </Space.Compact>
           <Form.Item name="userIds" label="Người dùng thuộc nhóm quyền">
             <Select
-              mode="tags"
+              mode="multiple"
               showSearch
-              maxTagCount="responsive"
               filterOption={(input, option) =>
                 (option?.label ?? '')
                   .toLowerCase()
                   .includes(input.toLowerCase())
               }
               options={users
-                .filter((i) => i.role !== sysmtemUserRole.admin)
+                .filter((i) => i.role !== sysmtemUserRole.admin && i.active)
                 .map((i) => {
                   return { value: i._id, label: i.name }
                 })}

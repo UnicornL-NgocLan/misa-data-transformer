@@ -56,11 +56,16 @@ const User = () => {
     setIsModalOpen(false)
   }
 
-  const handleUpdateRole = async (role, userId, companyIds) => {
+  const handleUpdateRole = async (role, userId, companyIds, name, username) => {
     try {
       if (loading) return
       setLoading(true)
-      await app.patch(`/api/update-user/${userId}`, { role, companyIds })
+      await app.patch(`/api/update-user/${userId}`, {
+        role,
+        companyIds,
+        name,
+        username,
+      })
       await handleFetchUsers()
       handleCancel()
     } catch (error) {
