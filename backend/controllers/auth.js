@@ -101,14 +101,23 @@ const userCtrl = {
       if (user && user.role === 'admin' && req.user.role !== 'admin')
         return res.status(400).json({ msg: 'Không được phép tác động admin' })
       if (parameters.code) {
-        const existingUser = await Users.findOne({
+        const existingCode = await Users.findOne({
           code: parameters.code,
           _id: { $ne: id },
         })
-        if (existingUser)
+
+        const existingAccount = await Users.findOne({
+          username: parameters.username,
+          _id: { $ne: id },
+        })
+        if (existingCode)
           return res
             .status(400)
             .json({ msg: 'Mã nhân sự này đã tồn tại rồi =)' })
+        if (existingAccount)
+          return res
+            .status(400)
+            .json({ msg: 'Tên đăng nhập này đã tồn tại rồi =)' })
       }
       await Users.findOneAndUpdate({ _id: id }, { ...parameters })
       res.status(200).json({ msg: 'Thành công' })
