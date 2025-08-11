@@ -7,6 +7,9 @@ const UserSchema = mongoose.Schema(
     name: String,
     companyIds: [{ type: mongoose.Types.ObjectId, ref: 'Company' }],
     active: { type: Boolean, default: true },
+    code: { type: String, unique: true },
+    birthdate: Date,
+    joiningDate: Date,
     role: { type: String, default: 'basic' },
   },
   { timestamps: true }

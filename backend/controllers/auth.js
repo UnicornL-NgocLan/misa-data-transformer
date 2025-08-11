@@ -43,7 +43,16 @@ const userCtrl = {
 
   createUser: async (req, res) => {
     try {
-      const { username, password, name, role, companyIds } = req.body
+      const {
+        username,
+        password,
+        name,
+        role,
+        companyIds,
+        birthdate,
+        code,
+        joiningDate,
+      } = req.body
       if (!username.trim() || !password.trim())
         return res
           .status(400)
@@ -59,6 +68,9 @@ const userCtrl = {
         name,
         role,
         companyIds,
+        birthdate,
+        code,
+        joiningDate,
       })
 
       res.status(200).json({ msg: 'Đã tạo hoàn tất người dùng' })
@@ -70,7 +82,7 @@ const userCtrl = {
   getUsers: async (req, res) => {
     try {
       const users = await Users.find({}).select(
-        'username name active role companyIds'
+        'username name active role companyIds birthdate code joiningDate'
       )
       res.status(200).json({ data: users })
     } catch (error) {
@@ -82,15 +94,17 @@ const userCtrl = {
     try {
       let parameters = { ...req.body }
       const { id } = req.params
-      Object.keys(parameters).forEach((key) => {
-        if (parameters[key] === null) {
-          delete parameters[key]
-        }
-      })
 
       const user = await Users.findOne({ _id: id })
       if (user && user.role === 'admin' && req.user.role !== 'admin')
         return res.status(400).json({ msg: 'Không được phép tác động admin' })
+      if (parameters.code) {
+        const existingUser = await Users.findOne({ code: parameters.code })
+        if (existingUser)
+          return res
+            .status(400)
+            .json({ msg: 'Mã nhân sự này đã tồn tại rồi =)' })
+      }
       await Users.findOneAndUpdate({ _id: id }, { ...parameters })
       res.status(200).json({ msg: 'Thành công' })
     } catch (error) {

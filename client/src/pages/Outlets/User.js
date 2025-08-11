@@ -12,6 +12,7 @@ import { FiPlus } from 'react-icons/fi'
 import useCheckRights from '../../utils/checkRights'
 import { MdEdit } from 'react-icons/md'
 import { Tooltip } from 'antd'
+import moment from 'moment'
 
 const User = () => {
   const { auth } = useZustand()
@@ -56,7 +57,16 @@ const User = () => {
     setIsModalOpen(false)
   }
 
-  const handleUpdateRole = async (role, userId, companyIds, name, username) => {
+  const handleUpdateRole = async (
+    role,
+    userId,
+    companyIds,
+    name,
+    username,
+    joiningDate,
+    birthdate,
+    code
+  ) => {
     try {
       if (loading) return
       setLoading(true)
@@ -65,6 +75,9 @@ const User = () => {
         companyIds,
         name,
         username,
+        joiningDate,
+        birthdate,
+        code,
       })
       await handleFetchUsers()
       handleCancel()
@@ -204,6 +217,32 @@ const User = () => {
       dataIndex: 'name',
       key: 'name',
       ...getColumnSearchProps('name'),
+    },
+    {
+      title: 'Mã nhân sự',
+      dataIndex: 'code',
+      key: 'code',
+      ...getColumnSearchProps('code'),
+    },
+    {
+      title: 'Ngày sinh',
+      dataIndex: 'birthdate',
+      key: 'birthdate',
+      align: 'right',
+      sorter: (a, b) => moment(a.birthdate) - moment(b.birthdate),
+      render: (value) => (
+        <span>{value ? moment(value).format('DD/MM/YYYY') : undefined}</span>
+      ),
+    },
+    {
+      title: 'Ngày vào làm',
+      dataIndex: 'joiningDate',
+      key: 'joiningDate',
+      align: 'right',
+      sorter: (a, b) => moment(a.joiningDate) - moment(b.joiningDate),
+      render: (value) => (
+        <span>{value ? moment(value).format('DD/MM/YYYY') : undefined}</span>
+      ),
     },
     {
       title: 'Đang hoạt động',
