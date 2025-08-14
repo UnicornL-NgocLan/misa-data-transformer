@@ -8,6 +8,7 @@ import { GiSettingsKnobs } from 'react-icons/gi'
 import dayjs from 'dayjs'
 import { IoFilterSharp } from 'react-icons/io5'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
+import app from '../axiosConfig'
 
 const TreeViewDebt = ({ raw }) => {
   const [selectedCompany, setSelectedCompany] = useState(null)
@@ -15,6 +16,7 @@ const TreeViewDebt = ({ raw }) => {
   const [selectedDate, setSelectedDate] = useState(null)
   const [expectedNumber, setExpectedNumber] = useState(0)
   const [collapsedNodes, setCollapsedNodes] = useState({})
+  const [loading, setLoading] = useState(false)
   const { companies } = useZustand()
 
   const handleSelectCompany = (value) => setSelectedCompany(value)
@@ -76,98 +78,34 @@ const TreeViewDebt = ({ raw }) => {
     return tree ? [tree] : []
   }
 
-  const processData = (raw) => {
-    let processedRawData = []
-    raw.forEach((item) => {
-      const alreadyProcessedItem = processedRawData.find((i) => {
-        const dateCreated = dayjs(item.date).add(7, 'hour').format('YYYY-MM-DD')
-        const dateInput = dayjs(i.date).add(7, 'hour').format('YYYY-MM-DD')
-        return (
-          i.subjectCompanyId._id === item.subjectCompanyId._id &&
-          i.counterpartCompanyId._id === item.counterpartCompanyId._id &&
-          i.type === item.type &&
-          i.activityGroup === item.activityGroup &&
-          dateCreated === dateInput
-        )
+  const handleGenerateChart = async () => {
+    try {
+      if (!selectedCompany) return alert('Vui lòng chọn công ty để xem biểu đồ')
+      if (!selectedDate) return alert('Vui lòng chọn ngày để lọc dữ liệu')
+      setLoading(true)
+      const { data } = await app.post('/api/process-tree-view-debt', {
+        data: raw,
+        selectedDate,
       })
-      if (alreadyProcessedItem) {
-        processedRawData = processedRawData.map((i) => {
-          if (i._id === alreadyProcessedItem._id) {
-            return {
-              ...i,
-              balance: i.balance + (item.debit - item.credit),
-            }
-          }
-          return i
-        })
-      } else {
-        processedRawData.push({
-          ...item,
-          balance: item.debit - item.credit,
-        })
-      }
-    })
-    const processed = processedRawData.map((item) => {
-      return {
-        date: item.date,
-        subject:
-          item.subjectCompanyId?.shortname || item.subjectCompanyId?.name,
-        partner:
-          item.counterpartCompanyId?.shortname ||
-          item.counterpartCompanyId?.name,
-        balance: Math.abs(item.balance),
-        type: item.type,
-        activityGroup: item.activityGroup,
-      }
-    })
-    return processed
-  }
 
-  const handleGenerateChart = () => {
-    if (!selectedCompany) return alert('Vui lòng chọn công ty để xem biểu đồ')
-    if (!selectedDate) return alert('Vui lòng chọn ngày để lọc dữ liệu')
+      let netDebts = data.data
 
-    const newData = processData(raw)
-    const filtered = newData.filter((item) => {
-      const startDay = dayjs(selectedDate, 'DD/MM/YYYY')
-      const endDay = dayjs(selectedDate, 'DD/MM/YYYY')
-      const dueDateFormat = dayjs(item.date)
-      return dueDateFormat.isBetween(startDay, endDay, 'day', '[]')
-    })
+      const startCompany = companies.find(
+        (company) => company._id === selectedCompany
+      )
+      if (!startCompany) return alert('Công ty không hợp lệ')
 
-    let processedData = [...filtered]
-    let investedData = filtered.filter(
-      (i) => i.activityGroup === 'invest' && i.type === 'payable'
-    )
-
-    investedData.forEach((i) => {
-      processedData = processedData.map((item) => {
-        const { activityGroup, partner, subject, type } = item
-        if (
-          type === 'receivable' &&
-          activityGroup === 'invest' &&
-          partner === i.subject &&
-          subject === i.partner
-        ) {
-          return { ...item, balance: i.balance }
-        } else {
-          return item
-        }
-      })
-    })
-
-    const netDebts = handleNetOffByGroup(processedData)
-    const startCompany = companies.find(
-      (company) => company._id === selectedCompany
-    )
-    if (!startCompany) return alert('Công ty không hợp lệ')
-
-    const debtTree = buildDebtTree(
-      netDebts,
-      startCompany.shortname,
-      collapsedNodes
-    )
-    setFilteredData(debtTree)
+      const debtTree = buildDebtTree(
+        netDebts,
+        startCompany.shortname,
+        collapsedNodes
+      )
+      setFilteredData(debtTree)
+    } catch (error) {
+      alert(error?.response?.data?.msg || error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -224,7 +162,13 @@ const TreeViewDebt = ({ raw }) => {
             placeholder="Chọn ngày để lọc"
             style={{ width: 200 }}
           />
-          <Button color="primary" variant="solid" onClick={handleGenerateChart}>
+          <Button
+            color="primary"
+            variant="solid"
+            onClick={handleGenerateChart}
+            loading={loading}
+            disabled={loading}
+          >
             Xem biểu đồ
           </Button>
         </Space>
