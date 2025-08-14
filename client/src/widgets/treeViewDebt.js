@@ -94,6 +94,8 @@ const TreeViewDebt = ({ raw }) => {
         data: filtered,
       })
 
+      console.log(data.data)
+
       let netDebts = data.data
 
       const startCompany = companies.find(
