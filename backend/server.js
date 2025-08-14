@@ -49,7 +49,7 @@ const corsConfig = {
 }
 
 const app = express()
-app.use(express.json())
+app.use(express.json({ limit: '10mb' }))
 app.use(bodyParser.json({ limit: '10mb', type: 'application/json' }))
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }))
 app.use(cookieParser(jwtSecret))
