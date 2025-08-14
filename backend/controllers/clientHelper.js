@@ -5,18 +5,11 @@ dayjs.extend(isBetween)
 const clientHelperCtrl = {
   processTreeViewDebtData: (req, res) => {
     try {
-      const { data, selectedDate } = req.body
+      const { data } = req.body
       const processed = handlePreProcessData(data)
-      console.log(processed)
-      const filtered = processed.filter((item) => {
-        const startDay = dayjs(selectedDate, 'DD/MM/YYYY')
-        const endDay = dayjs(selectedDate, 'DD/MM/YYYY')
-        const dueDateFormat = dayjs(item.date)
-        return dueDateFormat.isBetween(startDay, endDay, 'day', '[]')
-      })
 
-      let processedData = [...filtered]
-      let investedData = filtered.filter(
+      let processedData = [...processed]
+      let investedData = processed.filter(
         (i) => i.activityGroup === 'invest' && i.type === 'payable'
       )
 

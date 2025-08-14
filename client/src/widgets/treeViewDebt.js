@@ -3,7 +3,6 @@ import { useZustand } from '../zustand'
 import { DatePicker, Select, Space, Button, Tooltip, InputNumber } from 'antd'
 import { ReactHiererchyChart } from 'react-hierarchy-chart'
 import './treeView.css'
-import { handleNetOffByGroup } from '../utils/getNetOffDebts'
 import { GiSettingsKnobs } from 'react-icons/gi'
 import dayjs from 'dayjs'
 import { IoFilterSharp } from 'react-icons/io5'
@@ -83,9 +82,16 @@ const TreeViewDebt = ({ raw }) => {
       if (!selectedCompany) return alert('Vui lòng chọn công ty để xem biểu đồ')
       if (!selectedDate) return alert('Vui lòng chọn ngày để lọc dữ liệu')
       setLoading(true)
+
+      const filtered = raw.filter((item) => {
+        const startDay = dayjs(selectedDate, 'DD/MM/YYYY')
+        const endDay = dayjs(selectedDate, 'DD/MM/YYYY')
+        const dueDateFormat = dayjs(item.date)
+        return dueDateFormat.isBetween(startDay, endDay, 'day', '[]')
+      })
+
       const { data } = await app.post('/api/process-tree-view-debt', {
-        data: raw,
-        selectedDate,
+        data: filtered,
       })
 
       let netDebts = data.data
