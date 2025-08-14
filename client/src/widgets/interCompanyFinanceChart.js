@@ -185,7 +185,7 @@ const InterCompanyFinanceChart = ({ data }) => {
       label: 'Biểu đồ cây công nợ',
       children: (
         <>
-          <TreeViewDebt raw={processData(data)} />
+          <TreeViewDebt raw={data} />
         </>
       ),
     },

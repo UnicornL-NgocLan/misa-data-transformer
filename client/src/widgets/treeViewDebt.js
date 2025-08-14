@@ -80,46 +80,63 @@ const TreeViewDebt = ({ raw }) => {
     if (!selectedCompany) return alert('Vui lòng chọn công ty để xem biểu đồ')
     if (!selectedDate) return alert('Vui lòng chọn ngày để lọc dữ liệu')
 
-    const filtered = raw.filter((item) => {
-      const startDay = dayjs(selectedDate, 'DD/MM/YYYY')
-      const endDay = dayjs(selectedDate, 'DD/MM/YYYY')
-      const dueDateFormat = dayjs(item.date)
-      return dueDateFormat.isBetween(startDay, endDay, 'day', '[]')
-    })
-
-    let processedData = [...filtered]
-    let investedData = filtered.filter(
-      (i) => i.activityGroup === 'invest' && i.type === 'payable'
+    const worker = new Worker(
+      new URL('../workers/chartGeneratingProcess.worker.js', import.meta.url)
     )
 
-    investedData.forEach((i) => {
-      processedData = processedData.map((item) => {
-        const { activityGroup, partner, subject, type } = item
-        if (
-          type === 'receivable' &&
-          activityGroup === 'invest' &&
-          partner === i.subject &&
-          subject === i.partner
-        ) {
-          return { ...item, balance: i.balance }
-        } else {
-          return item
-        }
+    worker.postMessage({
+      data: raw,
+    })
+
+    worker.onmessage = (e) => {
+      const { data } = e.data
+
+      const filtered = data.filter((item) => {
+        const startDay = dayjs(selectedDate, 'DD/MM/YYYY')
+        const endDay = dayjs(selectedDate, 'DD/MM/YYYY')
+        const dueDateFormat = dayjs(item.date)
+        return dueDateFormat.isBetween(startDay, endDay, 'day', '[]')
       })
-    })
 
-    const netDebts = handleNetOffByGroup(processedData)
-    const startCompany = companies.find(
-      (company) => company._id === selectedCompany
-    )
-    if (!startCompany) return alert('Công ty không hợp lệ')
+      let processedData = [...filtered]
+      let investedData = filtered.filter(
+        (i) => i.activityGroup === 'invest' && i.type === 'payable'
+      )
 
-    const debtTree = buildDebtTree(
-      netDebts,
-      startCompany.shortname,
-      collapsedNodes
-    )
-    setFilteredData(debtTree)
+      investedData.forEach((i) => {
+        processedData = processedData.map((item) => {
+          const { activityGroup, partner, subject, type } = item
+          if (
+            type === 'receivable' &&
+            activityGroup === 'invest' &&
+            partner === i.subject &&
+            subject === i.partner
+          ) {
+            return { ...item, balance: i.balance }
+          } else {
+            return item
+          }
+        })
+      })
+
+      const netDebts = handleNetOffByGroup(processedData)
+      const startCompany = companies.find(
+        (company) => company._id === selectedCompany
+      )
+      if (!startCompany) return alert('Công ty không hợp lệ')
+
+      const debtTree = buildDebtTree(
+        netDebts,
+        startCompany.shortname,
+        collapsedNodes
+      )
+      setFilteredData(debtTree)
+      worker.terminate()
+    }
+    worker.onerror = (err) => {
+      console.error('Worker error:', err)
+      worker.terminate()
+    }
   }
 
   useEffect(() => {
