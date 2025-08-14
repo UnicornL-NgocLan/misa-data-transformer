@@ -220,7 +220,6 @@ const TreeViewDebt = ({ raw }) => {
       <div className="hierarchy-viewer">
         <div style={{ height: '80vh', border: '1px solid #ddd' }}>
           <TransformWrapper
-            centerOnInit
             minScale={0.1}
             maxScale={2}
             wheel={{ disabled: false }}
