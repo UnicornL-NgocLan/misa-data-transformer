@@ -50,8 +50,8 @@ const corsConfig = {
 
 const app = express()
 app.use(express.json())
-app.use(bodyParser.json({ limit: '1mb', type: 'application/json' }))
-app.use(bodyParser.urlencoded({ extended: true, limit: '1mb' }))
+app.use(bodyParser.json({ limit: '10mb', type: 'application/json' }))
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }))
 app.use(cookieParser(jwtSecret))
 app.use(cors(corsConfig))
 app.use(helmet())
