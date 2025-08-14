@@ -129,49 +129,65 @@ const TreeViewDebt = ({ raw }) => {
     if (!selectedDate) return alert('Vui lòng chọn ngày để lọc dữ liệu')
     setLoading(true)
 
-    const filtered = raw.filter((item) => {
-      const startDay = dayjs(selectedDate, 'DD/MM/YYYY')
-      const endDay = dayjs(selectedDate, 'DD/MM/YYYY')
-      const dueDateFormat = dayjs(item.date)
-      return dueDateFormat.isBetween(startDay, endDay, 'day', '[]')
-    })
+    const startDay = dayjs(selectedDate, 'DD/MM/YYYY')
+    const endDay = dayjs(selectedDate, 'DD/MM/YYYY')
 
-    const processed = processData(filtered)
+    // 1. Lọc dữ liệu trực tiếp từ raw (không clone nhiều lần)
+    const filtered = []
+    for (let i = 0; i < raw.length; i++) {
+      const dueDateFormat = dayjs(raw[i].date)
+      if (dueDateFormat.isBetween(startDay, endDay, 'day', '[]')) {
+        filtered.push(raw[i])
+      }
+    }
 
-    let processedData = [...processed]
-    let investedData = processed.filter(
-      (i) => i.activityGroup === 'invest' && i.type === 'payable'
-    )
+    // 2. Xử lý dữ liệu
+    const processedData = processData(filtered)
 
-    investedData.forEach((i) => {
-      processedData = processedData.map((item) => {
-        const { activityGroup, partner, subject, type } = item
+    // 3. Tìm danh sách invest & payable
+    const investedData = []
+    for (let i = 0; i < processedData.length; i++) {
+      if (
+        processedData[i].activityGroup === 'invest' &&
+        processedData[i].type === 'payable'
+      ) {
+        investedData.push(processedData[i])
+      }
+    }
+
+    // 4. Cập nhật balance trực tiếp (tránh map nhiều lần)
+    for (let i = 0; i < investedData.length; i++) {
+      const inv = investedData[i]
+      for (let j = 0; j < processedData.length; j++) {
+        const item = processedData[j]
         if (
-          type === 'receivable' &&
-          activityGroup === 'invest' &&
-          partner === i.subject &&
-          subject === i.partner
+          item.type === 'receivable' &&
+          item.activityGroup === 'invest' &&
+          item.partner === inv.subject &&
+          item.subject === inv.partner
         ) {
-          return { ...item, balance: i.balance }
-        } else {
-          return item
+          processedData[j] = { ...item, balance: inv.balance }
         }
-      })
-    })
+      }
+    }
 
+    // 5. Net off
     const netDebts = handleNetOffByGroup(processedData)
 
+    // 6. Tìm công ty
     const startCompany = companies.find(
       (company) => company._id === selectedCompany
     )
     if (!startCompany) return alert('Công ty không hợp lệ')
 
+    // 7. Build cây nợ
     const debtTree = buildDebtTree(
       netDebts,
       startCompany.shortname,
       collapsedNodes
     )
     setFilteredData(debtTree)
+
     setLoading(false)
   }
 
