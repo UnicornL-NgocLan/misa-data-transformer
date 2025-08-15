@@ -22,9 +22,33 @@ const TreeViewDebt = ({ raw }) => {
   const handleSelectDate = (date) => setSelectedDate(date)
 
   function buildDebtTree(data, rootCompany, collapsedNodes) {
+    // 1. Tiền xử lý: tạo map quan hệ và map khoản nợ
+    const lenderMap = new Map() // lender => [borrower,...]
+    const debtInfoMap = new Map() // key = borrower|lender => { totalAmount, activityGroups }
+
+    for (let i = 0; i < data.length; i++) {
+      const d = data[i]
+
+      // Lưu borrower theo lender
+      if (!lenderMap.has(d.lender)) {
+        lenderMap.set(d.lender, [])
+      }
+      lenderMap.get(d.lender).push(d.borrower)
+
+      // Lưu thông tin khoản nợ
+      const key = `${d.borrower}|${d.lender}`
+      if (!debtInfoMap.has(key)) {
+        debtInfoMap.set(key, { totalAmount: 0, activityGroups: {} })
+      }
+      const debtData = debtInfoMap.get(key)
+      debtData.totalAmount += d.amount
+      debtData.activityGroups[d.activityGroup] =
+        (debtData.activityGroups[d.activityGroup] || 0) + d.amount
+    }
+
+    // 2. Hàm đệ quy xây node
     function buildNode(company, level, parentCompany = null, path = []) {
       const nodeKey = `${parentCompany || 'ROOT'}->${company}`
-
       const node = {
         key: nodeKey,
         name: company,
@@ -32,42 +56,34 @@ const TreeViewDebt = ({ raw }) => {
         collapsed: collapsedNodes[nodeKey] || false,
       }
 
+      // Nếu có parent, lấy thông tin nợ đã tính sẵn
       if (parentCompany) {
-        const debts = data.filter(
-          (d) => d.borrower === company && d.lender === parentCompany
-        )
-
-        const activityGroups = {}
-        let totalAmount = 0
-        debts.forEach((d) => {
-          totalAmount += d.amount
-          activityGroups[d.activityGroup] =
-            (activityGroups[d.activityGroup] || 0) + d.amount
-        })
-
-        node.totalAmount = totalAmount
-        node.activityGroups = activityGroups
+        const key = `${company}|${parentCompany}`
+        if (debtInfoMap.has(key)) {
+          const { totalAmount, activityGroups } = debtInfoMap.get(key)
+          node.totalAmount = totalAmount
+          node.activityGroups = activityGroups
+        } else {
+          node.totalAmount = 0
+          node.activityGroups = {}
+        }
       }
 
+      // Chặn vòng lặp
       if (path.includes(company)) {
         node.note = 'Circular reference – stopped here'
         return node
       }
 
-      const childrenDebtors = data
-        .filter((d) => d.lender === company)
-        .map((d) => d.borrower)
-
+      // Lấy children nhanh từ map
+      const childrenDebtors = lenderMap.get(company) || []
       const uniqueChildren = [...new Set(childrenDebtors)]
       node.hasChildren = uniqueChildren.length > 0
-      const children = uniqueChildren
-        .map((child) =>
+
+      if (!node.collapsed && uniqueChildren.length > 0) {
+        node.childs = uniqueChildren.map((child) =>
           buildNode(child, level + 1, company, [...path, company])
         )
-        .filter((child) => child !== null)
-
-      if (!node.collapsed && children.length > 0) {
-        node.childs = children
       }
 
       return node
@@ -166,18 +182,17 @@ const TreeViewDebt = ({ raw }) => {
 
     // 5. Net off
     const netDebts = handleNetOffByGroup(processedData)
-    console.log(netDebts)
     // 6. Tìm công ty
     const startCompany = companies.find((c) => c._id === selectedCompany)
     if (!startCompany) return alert('Công ty không hợp lệ')
 
     // 7. Build cây nợ
-    // const debtTree = buildDebtTree(
-    //   netDebts,
-    //   startCompany.shortname,
-    //   collapsedNodes
-    // )
-    // setFilteredData(debtTree)
+    const debtTree = buildDebtTree(
+      netDebts,
+      startCompany.shortname,
+      collapsedNodes
+    )
+    setFilteredData(debtTree)
 
     setLoading(false)
   }
