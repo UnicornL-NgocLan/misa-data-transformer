@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useZustand } from '../zustand'
 import { DatePicker, Select, Space, Button, Tooltip, InputNumber } from 'antd'
 import { ReactHiererchyChart } from 'react-hierarchy-chart'
@@ -220,6 +220,71 @@ const TreeViewDebt = ({ raw }) => {
     setCollapsedNodes({})
   }
 
+  const toggleCollapsed = useCallback((nodeKey) => {
+    setCollapsedNodes((prev) => ({
+      ...prev,
+      [nodeKey]: !prev[nodeKey],
+    }))
+  }, [])
+
+  const renderedNode = useCallback(
+    (node) => {
+      return (
+        <Tooltip
+          open={node.totalAmount ? undefined : false}
+          title={
+            <div>
+              {node.totalAmount && (
+                <span>
+                  Tổng nợ:{' '}
+                  {node.totalAmount.toLocaleString('vi-VN', {
+                    style: 'currency',
+                    currency: 'VND',
+                  })}
+                </span>
+              )}
+              {node.activityGroups && (
+                <ul style={{ margin: 0, paddingRight: 20 }}>
+                  {Object.entries(node.activityGroups).map(
+                    ([group, amount], index) => (
+                      <li key={index} style={{ textAlign: 'left' }}>
+                        {group === 'business'
+                          ? 'Kinh doanh'
+                          : group === 'invest'
+                          ? 'Đầu tư'
+                          : group === 'finance'
+                          ? 'Tài chính'
+                          : 'Khác'}
+                        :{' '}
+                        {amount.toLocaleString('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND',
+                        })}
+                      </li>
+                    )
+                  )}
+                </ul>
+              )}
+            </div>
+          }
+        >
+          <div className="node-template">
+            <strong>
+              {node.name} {node.note && '🚫'}{' '}
+              {node.totalAmount >= expectedNumber && '✅'}
+            </strong>
+            {node.hasChildren && (
+              <Button size="small" type="text" onClick={toggleCollapsed}>
+                {collapsedNodes[node.key] ? '➕' : '➖'}
+              </Button>
+            )}
+          </div>
+        </Tooltip>
+      )
+    },
+    [collapsedNodes]
+  )
+
   return (
     <div className="App">
       <Space direction="vertical">
@@ -302,68 +367,7 @@ const TreeViewDebt = ({ raw }) => {
         <ReactHiererchyChart
           nodes={filteredData}
           direction="horizontal"
-          randerNode={(node) => {
-            const toggleCollapsed = (e) => {
-              e.stopPropagation()
-              setCollapsedNodes((prev) => ({
-                ...prev,
-                [node.key]: !prev[node.key],
-              }))
-            }
-
-            return (
-              <Tooltip
-                open={node.totalAmount ? undefined : false}
-                title={
-                  <div>
-                    {node.totalAmount && (
-                      <span>
-                        Tổng nợ:{' '}
-                        {node.totalAmount.toLocaleString('vi-VN', {
-                          style: 'currency',
-                          currency: 'VND',
-                        })}
-                      </span>
-                    )}
-                    {node.activityGroups && (
-                      <ul style={{ margin: 0, paddingRight: 20 }}>
-                        {Object.entries(node.activityGroups).map(
-                          ([group, amount], index) => (
-                            <li key={index} style={{ textAlign: 'left' }}>
-                              {group === 'business'
-                                ? 'Kinh doanh'
-                                : group === 'invest'
-                                ? 'Đầu tư'
-                                : group === 'finance'
-                                ? 'Tài chính'
-                                : 'Khác'}
-                              :{' '}
-                              {amount.toLocaleString('vi-VN', {
-                                style: 'currency',
-                                currency: 'VND',
-                              })}
-                            </li>
-                          )
-                        )}
-                      </ul>
-                    )}
-                  </div>
-                }
-              >
-                <div className="node-template">
-                  <strong>
-                    {node.name} {node.note && '🚫'}{' '}
-                    {node.totalAmount >= expectedNumber && '✅'}
-                  </strong>
-                  {node.hasChildren && (
-                    <Button size="small" type="text" onClick={toggleCollapsed}>
-                      {collapsedNodes[node.key] ? '➕' : '➖'}
-                    </Button>
-                  )}
-                </div>
-              </Tooltip>
-            )
-          }}
+          randerNode={renderedNode}
         />
       </div>
     </div>
