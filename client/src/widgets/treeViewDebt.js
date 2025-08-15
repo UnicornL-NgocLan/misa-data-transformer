@@ -166,18 +166,18 @@ const TreeViewDebt = ({ raw }) => {
 
     // 5. Net off
     const netDebts = handleNetOffByGroup(processedData)
-
+    console.log(netDebts)
     // 6. Tìm công ty
     const startCompany = companies.find((c) => c._id === selectedCompany)
     if (!startCompany) return alert('Công ty không hợp lệ')
 
     // 7. Build cây nợ
-    const debtTree = buildDebtTree(
-      netDebts,
-      startCompany.shortname,
-      collapsedNodes
-    )
-    setFilteredData(debtTree)
+    // const debtTree = buildDebtTree(
+    //   netDebts,
+    //   startCompany.shortname,
+    //   collapsedNodes
+    // )
+    // setFilteredData(debtTree)
 
     setLoading(false)
   }
