@@ -20,7 +20,7 @@ const TreeViewDebt = ({ raw }) => {
   const handleSelectCompany = (value) => setSelectedCompany(value)
   const handleSelectDate = (date) => setSelectedDate(date)
 
-  const MAX_NODE_LEVEL = 4
+  const MAX_NODE_LEVEL = 5
 
   // --------------------- Process raw data ---------------------
   const processData = useCallback((raw) => {
@@ -94,6 +94,7 @@ const TreeViewDebt = ({ raw }) => {
           level,
           cssClass: `level${level}`,
           collapsed: collapsedNodesParam[nodeKey] || false,
+          hasHiddenChildren: false,
         }
 
         if (parent) {
@@ -115,6 +116,11 @@ const TreeViewDebt = ({ raw }) => {
 
         const children = [...new Set(lenderMap.get(company) || [])]
         node.hasChildren = children.length > 0
+
+        if (level === MAX_NODE_LEVEL && node.hasChildren) {
+          node.hasHiddenChildren = true
+          return node
+        }
 
         if (!node.collapsed && children.length > 0) {
           node.childs = children
@@ -258,7 +264,7 @@ const TreeViewDebt = ({ raw }) => {
           <strong>
             {node.name} {node.note && '🚫'}{' '}
             {node.totalAmount >= expectedNumber && '✅'}{' '}
-            {node.level === MAX_NODE_LEVEL && '❌'}
+            {node.hasHiddenChildren && '❌'}
           </strong>
           {node.hasChildren && (
             <Button size="small" type="text" onClick={toggle}>
