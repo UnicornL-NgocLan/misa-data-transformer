@@ -185,13 +185,14 @@ const TreeViewDebt = ({ raw }) => {
     // 6. Tìm công ty
     const startCompany = companies.find((c) => c._id === selectedCompany)
     if (!startCompany) return alert('Công ty không hợp lệ')
-
+    console.log(netDebts)
     // 7. Build cây nợ
     const debtTree = buildDebtTree(
       netDebts,
       startCompany.shortname,
       collapsedNodes
     )
+    console.log(debtTree)
     setFilteredData(debtTree)
 
     setLoading(false)
