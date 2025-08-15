@@ -6,7 +6,6 @@ import './treeView.css'
 import { GiSettingsKnobs } from 'react-icons/gi'
 import dayjs from 'dayjs'
 import { IoFilterSharp } from 'react-icons/io5'
-import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import { handleNetOffByGroup } from '../utils/getNetOffDebts'
 
 const TreeViewDebt = ({ raw }) => {
@@ -300,95 +299,72 @@ const TreeViewDebt = ({ raw }) => {
       </Space>
 
       <div className="hierarchy-viewer">
-        <div style={{ height: '80vh', border: '1px solid #ddd' }}>
-          <TransformWrapper
-            minScale={0.1}
-            maxScale={2}
-            wheel={{ disabled: false }}
-            doubleClick={{ disabled: false }}
-            panning={{ disabled: false }}
-          >
-            <>
-              <TransformComponent
-                wrapperStyle={{ width: '100%', height: '100%' }}
-              >
-                <ReactHiererchyChart
-                  nodes={filteredData}
-                  direction="horizontal"
-                  randerNode={(node) => {
-                    const toggleCollapsed = (e) => {
-                      e.stopPropagation()
-                      setCollapsedNodes((prev) => ({
-                        ...prev,
-                        [node.key]: !prev[node.key],
-                      }))
-                    }
+        <ReactHiererchyChart
+          nodes={filteredData}
+          direction="horizontal"
+          randerNode={(node) => {
+            const toggleCollapsed = (e) => {
+              e.stopPropagation()
+              setCollapsedNodes((prev) => ({
+                ...prev,
+                [node.key]: !prev[node.key],
+              }))
+            }
 
-                    return (
-                      <Tooltip
-                        open={node.totalAmount ? undefined : false}
-                        title={
-                          <div>
-                            {node.totalAmount && (
-                              <span>
-                                Tổng nợ:{' '}
-                                {node.totalAmount.toLocaleString('vi-VN', {
-                                  style: 'currency',
-                                  currency: 'VND',
-                                })}
-                              </span>
-                            )}
-                            {node.activityGroups && (
-                              <ul style={{ margin: 0, paddingRight: 20 }}>
-                                {Object.entries(node.activityGroups).map(
-                                  ([group, amount], index) => (
-                                    <li
-                                      key={index}
-                                      style={{ textAlign: 'left' }}
-                                    >
-                                      {group === 'business'
-                                        ? 'Kinh doanh'
-                                        : group === 'invest'
-                                        ? 'Đầu tư'
-                                        : group === 'finance'
-                                        ? 'Tài chính'
-                                        : 'Khác'}
-                                      :{' '}
-                                      {amount.toLocaleString('vi-VN', {
-                                        style: 'currency',
-                                        currency: 'VND',
-                                      })}
-                                    </li>
-                                  )
-                                )}
-                              </ul>
-                            )}
-                          </div>
-                        }
-                      >
-                        <div className="node-template">
-                          <strong>
-                            {node.name} {node.note && '🚫'}{' '}
-                            {node.totalAmount >= expectedNumber && '✅'}
-                          </strong>
-                          {node.hasChildren && (
-                            <Button
-                              size="small"
-                              type="text"
-                              onClick={toggleCollapsed}
-                            >
-                              {collapsedNodes[node.key] ? '➕' : '➖'}
-                            </Button>
-                          )}
-                        </div>
-                      </Tooltip>
-                    )
-                  }}
-                />
-              </TransformComponent>
-            </>
-          </TransformWrapper>
-        </div>
+            return (
+              <Tooltip
+                open={node.totalAmount ? undefined : false}
+                title={
+                  <div>
+                    {node.totalAmount && (
+                      <span>
+                        Tổng nợ:{' '}
+                        {node.totalAmount.toLocaleString('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND',
+                        })}
+                      </span>
+                    )}
+                    {node.activityGroups && (
+                      <ul style={{ margin: 0, paddingRight: 20 }}>
+                        {Object.entries(node.activityGroups).map(
+                          ([group, amount], index) => (
+                            <li key={index} style={{ textAlign: 'left' }}>
+                              {group === 'business'
+                                ? 'Kinh doanh'
+                                : group === 'invest'
+                                ? 'Đầu tư'
+                                : group === 'finance'
+                                ? 'Tài chính'
+                                : 'Khác'}
+                              :{' '}
+                              {amount.toLocaleString('vi-VN', {
+                                style: 'currency',
+                                currency: 'VND',
+                              })}
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    )}
+                  </div>
+                }
+              >
+                <div className="node-template">
+                  <strong>
+                    {node.name} {node.note && '🚫'}{' '}
+                    {node.totalAmount >= expectedNumber && '✅'}
+                  </strong>
+                  {node.hasChildren && (
+                    <Button size="small" type="text" onClick={toggleCollapsed}>
+                      {collapsedNodes[node.key] ? '➕' : '➖'}
+                    </Button>
+                  )}
+                </div>
+              </Tooltip>
+            )
+          }}
+        />
       </div>
     </div>
   )
