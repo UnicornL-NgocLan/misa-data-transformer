@@ -78,50 +78,50 @@ const TreeViewDebt = ({ raw }) => {
   }
 
   const processData = (raw) => {
-    let processedRawData = []
-    raw.forEach((item) => {
-      const alreadyProcessedItem = processedRawData.find((i) => {
-        const dateCreated = dayjs(item.date).add(7, 'hour').format('YYYY-MM-DD')
-        const dateInput = dayjs(i.date).add(7, 'hour').format('YYYY-MM-DD')
-        return (
-          i.subjectCompanyId._id === item.subjectCompanyId._id &&
-          i.counterpartCompanyId._id === item.counterpartCompanyId._id &&
-          i.type === item.type &&
-          i.activityGroup === item.activityGroup &&
-          dateCreated === dateInput
-        )
-      })
-      if (alreadyProcessedItem) {
-        processedRawData = processedRawData.map((i) => {
-          if (i._id === alreadyProcessedItem._id) {
-            return {
-              ...i,
-              balance: i.balance + (item.debit - item.credit),
-            }
-          }
-          return i
-        })
+    const processedMap = new Map()
+    const dateCache = new Map() // cache format date tránh tạo dayjs nhiều lần
+
+    for (let i = 0; i < raw.length; i++) {
+      const item = raw[i]
+
+      // cache ngày
+      let dateKey = dateCache.get(item.date)
+      if (!dateKey) {
+        dateKey = dayjs(item.date).add(7, 'hour').format('YYYY-MM-DD')
+        dateCache.set(item.date, dateKey)
+      }
+
+      const subjectId = item.subjectCompanyId?._id || ''
+      const counterpartId = item.counterpartCompanyId?._id || ''
+      const key = `${subjectId}_${counterpartId}_${item.type}_${item.activityGroup}_${dateKey}`
+
+      if (processedMap.has(key)) {
+        processedMap.get(key).balance += item.debit - item.credit
       } else {
-        processedRawData.push({
-          ...item,
+        // Không spread toàn bộ item, chỉ lấy field cần thiết
+        processedMap.set(key, {
+          date: item.date,
+          subjectCompanyId: item.subjectCompanyId,
+          counterpartCompanyId: item.counterpartCompanyId,
+          type: item.type,
+          activityGroup: item.activityGroup,
           balance: item.debit - item.credit,
         })
       }
-    })
-    const processed = processedRawData.map((item) => {
-      return {
-        date: item.date,
-        subject:
-          item.subjectCompanyId?.shortname || item.subjectCompanyId?.name,
-        partner:
-          item.counterpartCompanyId?.shortname ||
-          item.counterpartCompanyId?.name,
-        balance: Math.abs(item.balance),
-        type: item.type,
-        activityGroup: item.activityGroup,
-      }
-    })
-    return processed
+    }
+
+    dateCache.clear() // giải phóng cache
+
+    // Trả về dữ liệu gọn nhẹ
+    return Array.from(processedMap.values()).map((item) => ({
+      date: item.date,
+      subject: item.subjectCompanyId?.shortname || item.subjectCompanyId?.name,
+      partner:
+        item.counterpartCompanyId?.shortname || item.counterpartCompanyId?.name,
+      balance: Math.abs(item.balance),
+      type: item.type,
+      activityGroup: item.activityGroup,
+    }))
   }
 
   const handleGenerateChart = () => {
@@ -130,13 +130,13 @@ const TreeViewDebt = ({ raw }) => {
     setLoading(true)
 
     const startDay = dayjs(selectedDate, 'DD/MM/YYYY')
-    const endDay = dayjs(selectedDate, 'DD/MM/YYYY')
+    const endDay = startDay // vì cùng ngày
 
-    // 1. Lọc dữ liệu trực tiếp từ raw (không clone nhiều lần)
+    // 1. Lọc nhanh không clone mảng
     const filtered = []
     for (let i = 0; i < raw.length; i++) {
-      const dueDateFormat = dayjs(raw[i].date)
-      if (dueDateFormat.isBetween(startDay, endDay, 'day', '[]')) {
+      const dueDate = dayjs(raw[i].date)
+      if (dueDate.isBetween(startDay, endDay, 'day', '[]')) {
         filtered.push(raw[i])
       }
     }
@@ -144,29 +144,22 @@ const TreeViewDebt = ({ raw }) => {
     // 2. Xử lý dữ liệu
     const processedData = processData(filtered)
 
-    // 3. Tìm danh sách invest & payable
-    const investedData = []
+    // 3. Index invest-payable để tránh loop lồng nhau
+    const investPayableMap = new Map()
     for (let i = 0; i < processedData.length; i++) {
-      if (
-        processedData[i].activityGroup === 'invest' &&
-        processedData[i].type === 'payable'
-      ) {
-        investedData.push(processedData[i])
+      const row = processedData[i]
+      if (row.activityGroup === 'invest' && row.type === 'payable') {
+        investPayableMap.set(`${row.partner}_${row.subject}`, row.balance)
       }
     }
 
-    // 4. Cập nhật balance trực tiếp (tránh map nhiều lần)
-    for (let i = 0; i < investedData.length; i++) {
-      const inv = investedData[i]
-      for (let j = 0; j < processedData.length; j++) {
-        const item = processedData[j]
-        if (
-          item.type === 'receivable' &&
-          item.activityGroup === 'invest' &&
-          item.partner === inv.subject &&
-          item.subject === inv.partner
-        ) {
-          processedData[j] = { ...item, balance: inv.balance }
+    // 4. Cập nhật balance dựa trên index
+    for (let i = 0; i < processedData.length; i++) {
+      const row = processedData[i]
+      if (row.type === 'receivable' && row.activityGroup === 'invest') {
+        const key = `${row.subject}_${row.partner}`
+        if (investPayableMap.has(key)) {
+          row.balance = investPayableMap.get(key)
         }
       }
     }
@@ -175,9 +168,7 @@ const TreeViewDebt = ({ raw }) => {
     const netDebts = handleNetOffByGroup(processedData)
 
     // 6. Tìm công ty
-    const startCompany = companies.find(
-      (company) => company._id === selectedCompany
-    )
+    const startCompany = companies.find((c) => c._id === selectedCompany)
     if (!startCompany) return alert('Công ty không hợp lệ')
 
     // 7. Build cây nợ

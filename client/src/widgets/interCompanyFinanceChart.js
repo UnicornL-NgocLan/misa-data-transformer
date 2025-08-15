@@ -13,50 +13,50 @@ const InterCompanyFinanceChart = ({ data }) => {
   const [filteredData2, setFilteredData2] = useState([])
 
   const processData = (raw) => {
-    let processedRawData = []
-    raw.forEach((item) => {
-      const alreadyProcessedItem = processedRawData.find((i) => {
-        const dateCreated = dayjs(item.date).add(7, 'hour').format('YYYY-MM-DD')
-        const dateInput = dayjs(i.date).add(7, 'hour').format('YYYY-MM-DD')
-        return (
-          i.subjectCompanyId._id === item.subjectCompanyId._id &&
-          i.counterpartCompanyId._id === item.counterpartCompanyId._id &&
-          i.type === item.type &&
-          i.activityGroup === item.activityGroup &&
-          dateCreated === dateInput
-        )
-      })
-      if (alreadyProcessedItem) {
-        processedRawData = processedRawData.map((i) => {
-          if (i._id === alreadyProcessedItem._id) {
-            return {
-              ...i,
-              balance: i.balance + (item.debit - item.credit),
-            }
-          }
-          return i
-        })
+    const processedMap = new Map()
+    const dateCache = new Map() // cache format date tránh tạo dayjs nhiều lần
+
+    for (let i = 0; i < raw.length; i++) {
+      const item = raw[i]
+
+      // cache ngày
+      let dateKey = dateCache.get(item.date)
+      if (!dateKey) {
+        dateKey = dayjs(item.date).add(7, 'hour').format('YYYY-MM-DD')
+        dateCache.set(item.date, dateKey)
+      }
+
+      const subjectId = item.subjectCompanyId?._id || ''
+      const counterpartId = item.counterpartCompanyId?._id || ''
+      const key = `${subjectId}_${counterpartId}_${item.type}_${item.activityGroup}_${dateKey}`
+
+      if (processedMap.has(key)) {
+        processedMap.get(key).balance += item.debit - item.credit
       } else {
-        processedRawData.push({
-          ...item,
+        // Không spread toàn bộ item, chỉ lấy field cần thiết
+        processedMap.set(key, {
+          date: item.date,
+          subjectCompanyId: item.subjectCompanyId,
+          counterpartCompanyId: item.counterpartCompanyId,
+          type: item.type,
+          activityGroup: item.activityGroup,
           balance: item.debit - item.credit,
         })
       }
-    })
-    const processed = processedRawData.map((item) => {
-      return {
-        date: item.date,
-        subject:
-          item.subjectCompanyId?.shortname || item.subjectCompanyId?.name,
-        partner:
-          item.counterpartCompanyId?.shortname ||
-          item.counterpartCompanyId?.name,
-        balance: Math.abs(item.balance),
-        type: item.type,
-        activityGroup: item.activityGroup,
-      }
-    })
-    return processed
+    }
+
+    dateCache.clear() // giải phóng cache
+
+    // Trả về dữ liệu gọn nhẹ
+    return Array.from(processedMap.values()).map((item) => ({
+      date: item.date,
+      subject: item.subjectCompanyId?.shortname || item.subjectCompanyId?.name,
+      partner:
+        item.counterpartCompanyId?.shortname || item.counterpartCompanyId?.name,
+      balance: Math.abs(item.balance),
+      type: item.type,
+      activityGroup: item.activityGroup,
+    }))
   }
 
   const columns = [
@@ -144,39 +144,45 @@ const InterCompanyFinanceChart = ({ data }) => {
   const handleDateFilter2 = (date) => {
     if (!date || date.length === 0) {
       setFilteredData2([])
-    } else {
-      const filtered = data.filter((item) => {
-        const startDay = dayjs(date, 'DD/MM/YYYY')
-        const endDay = dayjs(date, 'DD/MM/YYYY')
-        const dueDateFormat = dayjs(item.date)
-        return dueDateFormat.isBetween(startDay, endDay, 'day', '[]')
-      })
-
-      const filteredData = processData(filtered)
-
-      // Để xử lý trường hợp đầu tư
-      let processedData = [...filteredData]
-      let investedData = filteredData.filter(
-        (i) => i.activityGroup === 'invest' && i.type === 'payable'
-      )
-
-      investedData.forEach((i) => {
-        processedData = processedData.map((item) => {
-          const { activityGroup, partner, subject, type } = item
-          if (
-            type === 'receivable' &&
-            activityGroup === 'invest' &&
-            partner === i.subject &&
-            subject === i.partner
-          ) {
-            return { ...item, balance: i.balance }
-          } else {
-            return item
-          }
-        })
-      })
-      setFilteredData2(handleNetOffByGroup(processedData))
+      return
     }
+
+    const startDay = dayjs(date, 'DD/MM/YYYY')
+    const endDay = startDay // cùng ngày nên chỉ cần 1 biến
+
+    // 1. Lọc dữ liệu
+    const filtered = []
+    for (let i = 0; i < data.length; i++) {
+      const dueDate = dayjs(data[i].date)
+      if (dueDate.isBetween(startDay, endDay, 'day', '[]')) {
+        filtered.push(data[i])
+      }
+    }
+
+    // 2. Xử lý dữ liệu
+    const processedData = processData(filtered)
+
+    // 3. Duyệt 1 lần để vừa tìm investedData vừa cập nhật balance
+    const investedMap = new Map()
+    for (let i = 0; i < processedData.length; i++) {
+      const item = processedData[i]
+      if (item.activityGroup === 'invest' && item.type === 'payable') {
+        investedMap.set(`${item.subject}-${item.partner}`, item.balance)
+      }
+    }
+
+    for (let i = 0; i < processedData.length; i++) {
+      const item = processedData[i]
+      if (item.type === 'receivable' && item.activityGroup === 'invest') {
+        const key = `${item.partner}-${item.subject}`
+        if (investedMap.has(key)) {
+          processedData[i] = { ...item, balance: investedMap.get(key) }
+        }
+      }
+    }
+
+    // 4. Net off và set state
+    setFilteredData2(handleNetOffByGroup(processedData))
   }
 
   const items = [
