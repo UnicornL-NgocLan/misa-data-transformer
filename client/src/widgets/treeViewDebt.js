@@ -20,6 +20,8 @@ const TreeViewDebt = ({ raw }) => {
   const handleSelectCompany = (value) => setSelectedCompany(value)
   const handleSelectDate = (date) => setSelectedDate(date)
 
+  const MAX_NODE_LEVEL = 4
+
   // --------------------- Process raw data ---------------------
   const processData = useCallback((raw) => {
     const processedMap = new Map()
@@ -83,6 +85,8 @@ const TreeViewDebt = ({ raw }) => {
       }
 
       const traverse = (company, level = 1, parent = null, path = []) => {
+        if (level > MAX_NODE_LEVEL) return null // Dừng ở level 4
+
         const nodeKey = `${parent || 'ROOT'}->${company}`
         const node = {
           key: nodeKey,
@@ -111,10 +115,13 @@ const TreeViewDebt = ({ raw }) => {
 
         const children = [...new Set(lenderMap.get(company) || [])]
         node.hasChildren = children.length > 0
+
         if (!node.collapsed && children.length > 0) {
-          node.childs = children.map((child) =>
-            traverse(child, level + 1, company, [...path, company])
-          )
+          node.childs = children
+            .map((child) =>
+              traverse(child, level + 1, company, [...path, company])
+            )
+            .filter(Boolean) // loại bỏ null do vượt level 4
         }
 
         return node
@@ -250,7 +257,8 @@ const TreeViewDebt = ({ raw }) => {
         <div className="node-template">
           <strong>
             {node.name} {node.note && '🚫'}{' '}
-            {node.totalAmount >= expectedNumber && '✅'}
+            {node.totalAmount >= expectedNumber && '✅'}{' '}
+            {node.level === MAX_NODE_LEVEL && '❌'}
           </strong>
           {node.hasChildren && (
             <Button size="small" type="text" onClick={toggle}>
