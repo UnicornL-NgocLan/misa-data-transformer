@@ -43,9 +43,8 @@ const clientHelperCtrl = {
       const METABASE_SECRET_KEY =
         process.env.METABASE_SECRET_KEY_CHARTEL_CAPITAL_PROPORTION
 
-      console.log(METABASE_SECRET_KEY)
       const payload = {
-        resource: { question: 99 },
+        resource: { dashboard: 8 },
         params: {},
         exp: Math.round(Date.now() / 1000) + 60 * 60 * 24 * 30 * 12 * 100, // 10 minute expiration
       }
@@ -53,7 +52,7 @@ const clientHelperCtrl = {
 
       const iframeUrl =
         METABASE_SITE_URL +
-        '/embed/question/' +
+        '/embed/dashboard/' +
         token +
         '#bordered=false&titled=false'
       res.status(200).json({ link: iframeUrl })
