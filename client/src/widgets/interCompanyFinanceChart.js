@@ -8,6 +8,7 @@ import {
   getPreProcessedData,
 } from '../utils/getNetOffDebts'
 import TreeViewDebt from './treeViewDebt'
+import MetabaseChartelCaptitalProportionChart from './metabaseChartelCaptitalProportionChart'
 
 const InterCompanyFinanceChart = ({ data }) => {
   const [filteredData2, setFilteredData2] = useState([])
@@ -243,6 +244,15 @@ const InterCompanyFinanceChart = ({ data }) => {
               }
             })}
           />
+        </>
+      ),
+    },
+    {
+      key: '3',
+      label: 'Biểu đồ tỷ trọng vốn góp',
+      children: (
+        <>
+          <MetabaseChartelCaptitalProportionChart />
         </>
       ),
     },

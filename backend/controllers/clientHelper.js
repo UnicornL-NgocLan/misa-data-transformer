@@ -1,5 +1,6 @@
 const dayjs = require('dayjs')
 const isBetween = require('dayjs/plugin/isBetween')
+const jwt = require('jsonwebtoken')
 
 dayjs.extend(isBetween)
 const clientHelperCtrl = {
@@ -31,6 +32,31 @@ const clientHelperCtrl = {
 
       const netDebts = handleNetOffByGroup(processedData)
       res.status(200).json({ data: netDebts })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  getMetabaseLinkChartelCaptialProportion: async (req, res) => {
+    try {
+      const METABASE_SITE_URL = process.env.METABASE_SITE_URL
+      const METABASE_SECRET_KEY =
+        process.env.METABASE_SECRET_KEY_CHARTEL_CAPITAL_PROPORTION
+
+      console.log(METABASE_SECRET_KEY)
+      const payload = {
+        resource: { question: 99 },
+        params: {},
+        exp: Math.round(Date.now() / 1000) + 60 * 60 * 24 * 30 * 12 * 100, // 10 minute expiration
+      }
+      const token = jwt.sign(payload, METABASE_SECRET_KEY)
+
+      const iframeUrl =
+        METABASE_SITE_URL +
+        '/embed/question/' +
+        token +
+        '#bordered=false&titled=false'
+      res.status(200).json({ link: iframeUrl })
     } catch (error) {
       res.status(500).json({ msg: error.message })
     }
