@@ -231,6 +231,7 @@ const PaymentPlan = () => {
           dueDate: newDueDate,
           createdAt: newCreatedAt,
           updatedAt: newUpdatedAt,
+          dateExported: add7Hours(moment(Date.now()).toISOString()),
         }
         delete object.__v
         return object
