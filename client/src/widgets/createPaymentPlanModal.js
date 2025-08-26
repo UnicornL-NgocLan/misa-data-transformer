@@ -13,7 +13,7 @@ const PaymentPlanCreateModal = ({
 }) => {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
-  const { companies, auth } = useZustand()
+  const { companies, auth, moneyFlowReasons } = useZustand()
 
   function isValidUrl(string) {
     try {
@@ -43,6 +43,7 @@ const PaymentPlanCreateModal = ({
         type,
         documentLink,
         documentState,
+        moneyFlowGroupId,
       } = form.getFieldsValue()
       if (
         !subject?.trim() ||
@@ -77,6 +78,7 @@ const PaymentPlanCreateModal = ({
           type,
           documentLink,
           documentState,
+          moneyFlowGroupId: moneyFlowGroupId || null,
         })
       } else {
         await app.post('/api/create-payment-plan', {
@@ -95,6 +97,7 @@ const PaymentPlanCreateModal = ({
           type,
           documentLink,
           documentState,
+          moneyFlowGroupId: moneyFlowGroupId || null,
         })
       }
       await handleFetchPaymentPlans()
@@ -133,6 +136,7 @@ const PaymentPlanCreateModal = ({
       form.setFieldValue('type', isModalOpen?.type)
       form.setFieldValue('documentLink', isModalOpen?.documentLink)
       form.setFieldValue('documentState', isModalOpen?.documentState)
+      form.setFieldValue('moneyFlowGroupId', isModalOpen?.moneyFlowGroupId?._id)
     } else {
       form.setFieldValue('state', 'ongoing')
       form.setFieldValue('currency', 'vnd')
@@ -210,6 +214,29 @@ const PaymentPlanCreateModal = ({
             rules={[{ required: true, message: 'Nhập ngày thanh toán!' }]}
           >
             <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item
+            name="moneyFlowGroupId"
+            label="Mục đích dự chi"
+            style={{ flex: 1 }}
+          >
+            <Select
+              showSearch
+              allowClear
+              filterOption={(input, option) =>
+                (option?.label ?? '')
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
+              }
+              options={moneyFlowReasons
+                .filter((i) => i.type === 'payable')
+                .map((i) => {
+                  return {
+                    value: i._id,
+                    label: i.name,
+                  }
+                })}
+            />
           </Form.Item>
           <Form.Item
             style={{ flex: 1 }}

@@ -31,6 +31,7 @@ const PaymentPlan = () => {
     paymentPlans: currentPaymentPlans,
     setPaymentPlanState,
     companies,
+    moneyFlowReasons,
   } = useZustand()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
@@ -231,6 +232,7 @@ const PaymentPlan = () => {
           dueDate: newDueDate,
           createdAt: newCreatedAt,
           updatedAt: newUpdatedAt,
+          moneyFlowGroupId: i.moneyFlowGroupId?.name,
           dateExported: add7Hours(moment(Date.now()).toISOString()),
         }
         delete object.__v
@@ -317,10 +319,18 @@ const PaymentPlan = () => {
               note,
               type,
               documentState,
+              moneyFlowGroupId,
             } = i
             const newCompanyId = companies.find(
               (item) => item.name === companyId
             )
+
+            const newMoneyFlowGroupId = moneyFlowGroupId
+              ? moneyFlowReasons.find(
+                  (i) => i.name === moneyFlowGroupId && i.type === 'payable'
+                )
+              : null
+
             let myDueDate = undefined
             if (_.isDate(dueDate)) {
               myDueDate = dueDate
@@ -362,6 +372,7 @@ const PaymentPlan = () => {
               type,
               state,
               documentState,
+              moneyFlowGroupId: newMoneyFlowGroupId?._id || null,
             }
 
             return i._id
@@ -436,6 +447,13 @@ const PaymentPlan = () => {
       key: 'content',
       width: 150,
       ...getColumnSearchProps('content'),
+    },
+    {
+      title: 'Mục đích dự chi',
+      dataIndex: 'moneyFlowReason',
+      key: 'moneyFlowReason',
+      width: 130,
+      ...getColumnSearchProps('moneyFlowReason'),
     },
     {
       title: 'Chứng từ gốc',
@@ -777,6 +795,7 @@ const PaymentPlan = () => {
                 return {
                   ...i,
                   company: i?.companyId?.name,
+                  moneyFlowReason: i?.moneyFlowGroupId?.name,
                   dueDate: moment(i?.dueDate).format('DD/MM/YYYY'),
                   updatedAt: moment(i?.updatedAt).format('DD/MM/YYYY HH:mm:ss'),
                   createdAt: moment(i?.createdAt).format('DD/MM/YYYY HH:mm:ss'),

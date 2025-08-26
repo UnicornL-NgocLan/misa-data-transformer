@@ -12,21 +12,30 @@ const SourceCreateModal = ({
 }) => {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
-  const { companies, auth, bankAccounts } = useZustand()
+  const { companies, auth, bankAccounts, moneyFlowReasons } = useZustand()
   const [isChooseBank, setIsChooseBank] = useState(false)
+  const [isChooseDuThu, setIsChooseDuThu] = useState(false)
 
   const handleOk = async () => {
     try {
       if (loading) return
-      const { type, name, value, currency, bankAccountId, companyId } =
-        form.getFieldsValue()
+      const {
+        type,
+        name,
+        value,
+        currency,
+        bankAccountId,
+        companyId,
+        moneyFlowGroupId,
+      } = form.getFieldsValue()
       if (
         !type ||
         !companyId ||
         !name ||
         !currency ||
         (type === 'bank' && !bankAccountId) ||
-        !value
+        !value ||
+        (type === 'incomming' && !moneyFlowGroupId)
       )
         return alert('Vui lòng nhập đầy đủ thông tin')
       setLoading(true)
@@ -38,6 +47,7 @@ const SourceCreateModal = ({
           currency,
           bankAccountId,
           companyId,
+          moneyFlowGroupId: moneyFlowGroupId || null,
         })
       } else {
         await app.post('/api/create-source', {
@@ -47,6 +57,7 @@ const SourceCreateModal = ({
           currency,
           bankAccountId,
           companyId,
+          moneyFlowGroupId: moneyFlowGroupId || null,
         })
       }
       await handleFetchSources()
@@ -71,11 +82,13 @@ const SourceCreateModal = ({
       form.setFieldValue('bankAccountId', isModalOpen?.bankAccountId)
       form.setFieldValue('value', isModalOpen?.value)
       form.setFieldValue('currency', isModalOpen?.currency)
+      form.setFieldValue('moneyFlowGroupId', isModalOpen?.moneyFlowGroupId)
     } else {
       form.setFieldValue('type', 'cash')
     }
 
     setIsChooseBank(form.getFieldValue('type') === 'bank')
+    setIsChooseDuThu(form.getFieldValue('type') === 'incomming')
   }, [])
 
   return (
@@ -140,6 +153,7 @@ const SourceCreateModal = ({
                   form.setFieldValue('bankAccountId', undefined)
                 }
                 setIsChooseBank(value === 'bank')
+                setIsChooseDuThu(value === 'incomming')
               }}
               options={[
                 { value: 'bank', label: 'Ngân hàng' },
@@ -181,6 +195,36 @@ const SourceCreateModal = ({
                     label: `${
                       i.accountNumber
                     } (${i.currency.toUpperCase()}) - ${i.bankId.name}`,
+                  }
+                })}
+            />
+          </Form.Item>
+        )}
+        {isChooseDuThu && (
+          <Form.Item
+            name="moneyFlowGroupId"
+            label="Diễn giải dự thu"
+            rules={[
+              {
+                required: isChooseDuThu,
+                message: 'Hãy chọn diễn giải dự thu!',
+              },
+            ]}
+          >
+            <Select
+              showSearch
+              allowClear
+              filterOption={(input, option) =>
+                (option?.label ?? '')
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
+              }
+              options={moneyFlowReasons
+                .filter((i) => i.type === 'receivable')
+                .map((i) => {
+                  return {
+                    value: i._id,
+                    label: i.name,
                   }
                 })}
             />

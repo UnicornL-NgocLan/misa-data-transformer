@@ -9,6 +9,7 @@ const InterCompanyFinances = require('../models/interCompanyFinance')
 const CompanyTypes = require('../models/companyType')
 const ChartelCapitalTransactions = require('../models/chartelCapitalTransaction')
 const Accounts = require('../models/account')
+const MoneyFlowReasons = require('../models/moneyFlowReason')
 const moment = require('moment-timezone')
 
 const dataCtrl = {
@@ -370,6 +371,7 @@ const dataCtrl = {
         type,
         documentLink,
         documentState,
+        moneyFlowGroupId,
       } = req.body
       if (
         !subject.trim() ||
@@ -400,6 +402,7 @@ const dataCtrl = {
         type,
         documentLink,
         documentState,
+        moneyFlowGroupId,
       })
 
       res.status(200).json({ msg: 'Đã tạo hoàn tất kế hoạch thanh toán' })
@@ -412,11 +415,7 @@ const dataCtrl = {
     try {
       let parameters = { ...req.body }
       const { id } = req.params
-      Object.keys(parameters).forEach((key) => {
-        if (parameters[key] === null) {
-          delete parameters[key]
-        }
-      })
+
       const newOne = await PaymentPlans.findOneAndUpdate(
         { _id: id, companyId: { $in: req.user.companyIds } },
         { ...parameters },
@@ -446,7 +445,7 @@ const dataCtrl = {
     try {
       const banks = await PaymentPlans.find({
         companyId: { $in: req.user.companyIds },
-      }).populate('companyId', 'name')
+      }).populate('companyId moneyFlowGroupId', 'name')
       res.status(200).json({ data: banks })
     } catch (error) {
       res.status(500).json({ msg: error.message })
@@ -455,7 +454,15 @@ const dataCtrl = {
 
   createSource: async (req, res) => {
     try {
-      const { companyId, name, type, bankAccountId, value, currency } = req.body
+      const {
+        companyId,
+        name,
+        type,
+        bankAccountId,
+        value,
+        currency,
+        moneyFlowGroupId,
+      } = req.body
       if (
         !type ||
         !companyId ||
@@ -476,6 +483,7 @@ const dataCtrl = {
         value,
         currency,
         updatedBy: req.user._id,
+        moneyFlowGroupId,
       })
 
       res.status(200).json({ msg: 'Đã tạo hoàn tất nguồn' })
@@ -488,11 +496,7 @@ const dataCtrl = {
     try {
       let parameters = { ...req.body }
       const { id } = req.params
-      Object.keys(parameters).forEach((key) => {
-        if (parameters[key] === null) {
-          delete parameters[key]
-        }
-      })
+
       const newOne = await Sources.findOneAndUpdate(
         { _id: id, companyId: { $in: req.user.companyIds } },
         { ...parameters, updatedBy: req.user._id },
@@ -526,7 +530,7 @@ const dataCtrl = {
         .select(
           'companyId name type bankAccountId value updatedBy currency updatedAt'
         )
-        .populate('companyId updatedBy', 'name')
+        .populate('companyId updatedBy moneyFlowGroupId', 'name')
       res.status(200).json({ data: list })
     } catch (error) {
       res.status(500).json({ msg: error.message })
@@ -970,6 +974,101 @@ const dataCtrl = {
     try {
       const accounts = await Accounts.find({})
       res.status(200).json({ data: accounts })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  createMoneyFlowReason: async (req, res) => {
+    try {
+      const { name, type } = req.body
+      if (!name || !type)
+        return res
+          .status(400)
+          .json({ msg: 'Vui lòng cung cấp đầy đủ thông tin' })
+      const existingRecord = await MoneyFlowReasons.findOne({ name, type })
+      if (existingRecord)
+        return res.status(400).json({ msg: 'Nhóm dòng tiền đã tồn tại' })
+
+      await MoneyFlowReasons.create({
+        name,
+        type,
+      })
+
+      res.status(200).json({ msg: 'Đã tạo hoàn tất nhóm dòng tiền' })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  getMoneyFlowReasons: async (req, res) => {
+    try {
+      const moneyFlowGroups = await MoneyFlowReasons.find({}).select(
+        'name type'
+      )
+      res.status(200).json({ data: moneyFlowGroups })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  updateMoneyFlowReason: async (req, res) => {
+    try {
+      let parameters = { ...req.body }
+      const { id } = req.params
+      Object.keys(parameters).forEach((key) => {
+        if (parameters[key] === null) {
+          delete parameters[key]
+        }
+      })
+      const existingRecord = await MoneyFlowReasons.findOne({
+        _id: { $ne: id },
+        name: parameters.name,
+      })
+
+      if (existingRecord)
+        return res
+          .status(400)
+          .json({ msg: 'Đã tồn tại nhóm dòng tiền với tên được cập nhật' })
+
+      const newOne = await MoneyFlowReasons.findOneAndUpdate(
+        { _id: id },
+        { ...parameters },
+        { new: true }
+      )
+      if (!newOne)
+        return res
+          .status(400)
+          .json({ msg: 'Nhóm dòng tiền không có trong cơ sở dữ liệu' })
+      res.status(200).json({ msg: 'Đã cập nhật thành công' })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  deleteMoneyFlowReason: async (req, res) => {
+    try {
+      const { id } = req.params
+      await MoneyFlowReasons.findOneAndDelete({ _id: id })
+
+      await Sources.updateMany(
+        {
+          moneyFlowGroupId: id,
+        },
+        {
+          moneyFlowGroupId: undefined,
+        }
+      )
+
+      await PaymentPlans.updateMany(
+        {
+          moneyFlowGroupId: id,
+        },
+        {
+          moneyFlowGroupId: undefined,
+        }
+      )
+      res.status(200).json({ msg: 'Đã xóa thành công' })
     } catch (error) {
       res.status(500).json({ msg: error.message })
     }

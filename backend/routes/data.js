@@ -69,6 +69,12 @@ router.post(
   checkRights('account', ['create']),
   dataCtrl.createAccount
 )
+router.post(
+  '/create-money-flow-reason',
+  authenticate,
+  checkRights('moneyFlowReason', ['create']),
+  dataCtrl.createMoneyFlowReason
+)
 
 router.patch(
   '/update-bank/:id',
@@ -136,6 +142,12 @@ router.patch(
   checkRights('account', ['write']),
   dataCtrl.updateAccount
 )
+router.patch(
+  '/update-money-flow-reason/:id',
+  authenticate,
+  checkRights('moneyFlowReason', ['write']),
+  dataCtrl.updateMoneyFlowReason
+)
 
 router.get('/get-companies', authenticate, dataCtrl.getCompanies)
 router.get('/get-banks', authenticate, dataCtrl.getBanks)
@@ -156,6 +168,11 @@ router.get(
   dataCtrl.getChartelCaptitalTransaction
 )
 router.get('/get-accounts', authenticate, dataCtrl.getAccounts)
+router.get(
+  '/get-money-flow-reasons',
+  authenticate,
+  dataCtrl.getMoneyFlowReasons
+)
 
 router.delete(
   '/delete-source/:id',
@@ -198,6 +215,12 @@ router.delete(
   authenticate,
   checkRights('account', ['canDelete']),
   dataCtrl.deleteAccount
+)
+router.delete(
+  '/delete-money-flow-reason/:id',
+  authenticate,
+  checkRights('moneyFlowReason', ['canDelete']),
+  dataCtrl.deleteMoneyFlowReason
 )
 
 module.exports = router

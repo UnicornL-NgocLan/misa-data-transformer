@@ -17,6 +17,10 @@ const PaymentPlanSchema = mongoose.Schema(
     currency: String,
     note: String,
     type: String,
+    moneyFlowGroupId: {
+      type: mongoose.Types.ObjectId,
+      ref: 'MoneyFlowReason',
+    },
     conversedValue: Number,
     state: { type: String, default: 'ongoing' },
     documentState: { type: String },

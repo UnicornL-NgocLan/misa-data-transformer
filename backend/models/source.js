@@ -16,6 +16,10 @@ const SourceSchema = mongoose.Schema(
     value: Number,
     valueForecasted: Number,
     currency: String,
+    moneyFlowGroupId: {
+      type: mongoose.Types.ObjectId,
+      ref: 'MoneyFlowReason',
+    },
     updatedBy: {
       type: mongoose.Types.ObjectId,
       ref: 'User',

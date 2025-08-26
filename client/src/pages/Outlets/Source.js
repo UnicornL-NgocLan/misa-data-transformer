@@ -35,8 +35,8 @@ const Source = () => {
   const {
     sources: currentSources,
     setSourceState,
-    auth,
     companies,
+    moneyFlowReasons,
     bankAccounts,
   } = useZustand()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -234,6 +234,7 @@ const Source = () => {
           bankAccountId:
             bankAccounts.find((item) => item._id === i.bankAccountId)
               ?.accountNumber || '',
+          moneyFlowGroupId: i.moneyFlowGroupId?.name || '',
         }
         return myObj
       }),
@@ -305,6 +306,7 @@ const Source = () => {
               value,
               name,
               bankAccountId,
+              moneyFlowGroupId,
             } = i
             const newCompanyId = companies.find(
               (item) => item.name === companyId
@@ -315,6 +317,12 @@ const Source = () => {
                 item.accountNumber.toString() === bankAccountId.toString()
             )
 
+            const newMoneyFlowGroupId = moneyFlowGroupId
+              ? moneyFlowReasons.find(
+                  (i) => i.name === moneyFlowGroupId && i.type === 'receivable'
+                )
+              : null
+
             if (
               !name?.trim() ||
               !currency?.trim() ||
@@ -322,7 +330,9 @@ const Source = () => {
               !type ||
               !value ||
               (type === 'cash' && newBankAccountId?._id?.toString()?.trim()) ||
-              (type === 'bank' && !newBankAccountId?._id?.toString()?.trim())
+              (type === 'bank' && !newBankAccountId?._id?.toString()?.trim()) ||
+              (type === 'incomming' &&
+                !newMoneyFlowGroupId?._id?.toString()?.trim())
             ) {
               fileInputRef.current.value = ''
               setIsProcessing(false)
@@ -337,6 +347,7 @@ const Source = () => {
               value,
               name,
               bankAccountId: newBankAccountId?._id,
+              moneyFlowGroupId: newMoneyFlowGroupId?._id,
             }
 
             return _id
@@ -451,6 +462,13 @@ const Source = () => {
       render: (value) => {
         return <span>{Intl.NumberFormat().format(value)}</span>
       },
+    },
+    {
+      title: 'Diễn giải dự thu',
+      dataIndex: 'moneyFlowReason',
+      key: 'moneyFlowReason',
+      width: 200,
+      ...getColumnSearchProps('moneyFlowReason'),
     },
     {
       title: 'Lần cập nhật gần nhất',
@@ -573,6 +591,7 @@ const Source = () => {
                   ...i,
                   company: i?.companyId?.name,
                   personUpdating: i?.updatedBy?.name,
+                  moneyFlowReason: i?.moneyFlowGroupId?.name,
                 }
               })
             : []

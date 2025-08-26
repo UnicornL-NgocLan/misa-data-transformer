@@ -211,4 +211,5 @@ export const objectMapping = {
   companyType: 'Khối công ty',
   chartelCapital: 'Vốn điều lệ',
   account: 'Tài khoản kế toán',
+  moneyFlowReason: 'Mục đích dòng tiền',
 }
