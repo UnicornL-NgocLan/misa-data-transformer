@@ -63,6 +63,7 @@ const CompanyCreateModal = ({
                   partner_id: item.partner_id,
                   value: item.value,
                   company_id: item.company_id?._id,
+                  realValue: item.realValue,
                 }
               )
             }
@@ -253,12 +254,22 @@ const CompanyCreateModal = ({
                   title: 'Công ty góp vốn',
                   dataIndex: 'partner',
                   key: 'partner',
+                  width: 250,
                   render: (value) => <span>{value}</span>,
                 },
                 {
-                  title: 'Giá trị (VNĐ)',
+                  title: 'Giá trị lý thuyết (VNĐ)',
                   dataIndex: 'value',
                   key: 'value',
+                  align: 'center',
+                  render: (value) => (
+                    <span>{Intl.NumberFormat().format(value)}</span>
+                  ),
+                },
+                {
+                  title: 'Giá trị thực tế (VNĐ)',
+                  dataIndex: 'realValue',
+                  key: 'realValue',
                   align: 'center',
                   render: (value) => (
                     <span>{Intl.NumberFormat().format(value)}</span>

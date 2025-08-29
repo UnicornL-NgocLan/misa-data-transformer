@@ -76,14 +76,63 @@ const InterCompanyFinanceDiffList = () => {
           e.type !== type
       )
       if (!counterpart) {
-        discrepancies.push({
-          subjectA: subject,
-          subjectB: partner,
-          activityGroup,
-          balanceA: balance,
-          balanceB: 0,
-          delta: balance,
-        })
+        if (activityGroup === 'invest') {
+          // Lấy công ty nhận tiền đầu tư
+          const companyInvested = companies.find((company) =>
+            type === 'receivable'
+              ? company.shortname === subject
+              : company.shortname === partner
+          )
+
+          if (!companyInvested) {
+            discrepancies.push({
+              subjectA: subject,
+              subjectB: partner,
+              activityGroup,
+              balanceA: balance,
+              balanceB: 0,
+              delta: balance,
+              note: 'Đây là trường hợp không tìm thấy giao dịch đối ứng còn lại! Không tìm thấy công ty nhận tiền đầu tư',
+            })
+          } else {
+            const counterpartCompanyShortname =
+              companyInvested?.shortname === subject ? partner : subject
+            const rspectiveChartelCapital = chartelCapitalTransactions.find(
+              (i) =>
+                i.company_id?._id === companyInvested._id &&
+                i.partner_id?.shortname === counterpartCompanyShortname
+            )
+
+            let companyInvestedAmount = rspectiveChartelCapital?.realValue || 0
+            if (companyInvestedAmount !== Math.abs(balance + 0)) {
+              discrepancies.push({
+                subjectA: subject,
+                subjectB: partner,
+                activityGroup,
+                balanceA: balance,
+                balanceB: 0,
+                delta: companyInvestedAmount - Math.abs(balance + 0),
+                note: `Công ty ${
+                  companyInvested.shortname
+                } có vốn điều lệ không khớp với số tiền đầu tư ghi nhận. Vốn điều lệ: ${Intl.NumberFormat().format(
+                  companyInvestedAmount
+                )}, Số tiền đầu tư ghi nhận: ${Intl.NumberFormat().format(
+                  Math.abs(balance + 0)
+                )}`,
+              })
+            }
+          }
+        } else {
+          discrepancies.push({
+            subjectA: subject,
+            subjectB: partner,
+            activityGroup,
+            balanceA: balance,
+            balanceB: 0,
+            delta: balance,
+            note: `Hệ thống không tìm thấy giao dịch đối ứng còn lại được ghi nhận bởi ${partner}!`,
+          })
+        }
       } else if (balance !== counterpart.balance) {
         if (activityGroup === 'invest') {
           // Lấy công ty nhận tiền đầu tư
@@ -112,7 +161,7 @@ const InterCompanyFinanceDiffList = () => {
                 i.partner_id?.shortname === counterpartCompanyShortname
             )
 
-            let companyInvestedAmount = rspectiveChartelCapital?.value || 0
+            let companyInvestedAmount = rspectiveChartelCapital?.realValue || 0
             if (
               companyInvestedAmount !== Math.abs(balance + counterpart.balance)
             ) {
@@ -173,7 +222,7 @@ const InterCompanyFinanceDiffList = () => {
                 i.partner_id?.shortname === counterpartCompanyShortname
             )
 
-            let companyInvestedAmount = rspectiveChartelCapital?.value || 0
+            let companyInvestedAmount = rspectiveChartelCapital?.realValue || 0
             if (
               companyInvestedAmount !== Math.abs(balance + counterpart?.balance)
             ) {

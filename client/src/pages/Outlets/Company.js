@@ -62,13 +62,25 @@ const Company = () => {
       width: 200,
     },
     {
-      title: 'Vốn điều lệ (VND)',
+      title: 'Vốn điều lệ lý thuyết (VND)',
       dataIndex: 'total',
       key: 'total',
       align: 'right',
       hidden: !checkRights('chartelCapital', ['read']),
       width: 200,
       sorter: (a, b) => a.total - b.total,
+      render: (value) => {
+        return <span>{Intl.NumberFormat().format(value)}</span>
+      },
+    },
+    {
+      title: 'Vốn điều lệ thực tế (VND)',
+      dataIndex: 'realTotal',
+      key: 'realTotal',
+      align: 'right',
+      hidden: !checkRights('chartelCapital', ['read']),
+      width: 200,
+      sorter: (a, b) => a.realTotal - b.realTotal,
       render: (value) => {
         return <span>{Intl.NumberFormat().format(value)}</span>
       },
@@ -372,15 +384,18 @@ const Company = () => {
                               (item) => item.company_id?._id === i._id
                             )
                           let totalValue = 0
+                          let realTotal = 0
 
                           for (const line of listOfRespectiveChartelCapital) {
                             totalValue += line.value
+                            realTotal += line.realValue
                           }
                           return {
                             ...i,
                             parentCompany: i?.parentId?.name,
                             companyTypeName: i?.companyType?.name,
                             total: totalValue,
+                            realTotal: realTotal,
                           }
                         })
                       : []

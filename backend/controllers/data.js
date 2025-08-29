@@ -809,8 +809,8 @@ const dataCtrl = {
 
   createChartelCapitalTransaction: async (req, res) => {
     try {
-      const { value, company_id, partner_id } = req.body
-      if (!value || !company_id || !partner_id)
+      const { value, company_id, partner_id, realValue } = req.body
+      if (!value || !company_id || !partner_id || !realValue)
         return res.status(400).json({ msg: 'Vui lòng nhập đầy đủ thông tin' })
       const existingCurrentCompany = await Companies.find({ _id: company_id })
       if (!existingCurrentCompany)
@@ -837,6 +837,7 @@ const dataCtrl = {
         value,
         company_id,
         partner_id,
+        realValue,
       })
       res.status(200).json({ msg: 'Đã tạo thành công' })
     } catch (error) {
