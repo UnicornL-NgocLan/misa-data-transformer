@@ -12,6 +12,7 @@ import MetabaseChartelCaptitalProportionChart from './metabaseChartelCaptitalPro
 
 const InterCompanyFinanceChart = ({ data }) => {
   const [filteredData2, setFilteredData2] = useState([])
+  const [dateFiltered, setDateFiltered] = useState(null)
 
   const processData = (raw) => {
     const processedMap = new Map()
@@ -145,11 +146,14 @@ const InterCompanyFinanceChart = ({ data }) => {
   const handleDateFilter2 = (date) => {
     if (!date || date.length === 0) {
       setFilteredData2([])
+      setDateFiltered(null)
       return
     }
 
     const startDay = dayjs(date, 'DD/MM/YYYY')
     const endDay = startDay // cùng ngày nên chỉ cần 1 biến
+
+    setDateFiltered(startDay)
 
     // 1. Lọc dữ liệu
     const filtered = []
@@ -162,19 +166,21 @@ const InterCompanyFinanceChart = ({ data }) => {
 
     // 2. Xử lý dữ liệu
     const processedData = processData(filtered)
-
     // 3. Duyệt 1 lần để vừa tìm investedData vừa cập nhật balance
     const investedMap = new Map()
     for (let i = 0; i < processedData.length; i++) {
       const item = processedData[i]
-      if (item.activityGroup === 'invest' && item.type === 'payable') {
+      if (
+        item.activityGroup === 'invest' &&
+        item.type === 'investing_receivable'
+      ) {
         investedMap.set(`${item.subject}-${item.partner}`, item.balance)
       }
     }
 
     for (let i = 0; i < processedData.length; i++) {
       const item = processedData[i]
-      if (item.type === 'receivable' && item.activityGroup === 'invest') {
+      if (item.type === 'investing' && item.activityGroup === 'invest') {
         const key = `${item.partner}-${item.subject}`
         if (investedMap.has(key)) {
           processedData[i] = { ...item, balance: investedMap.get(key) }
@@ -209,18 +215,31 @@ const InterCompanyFinanceChart = ({ data }) => {
           <Table
             columns={columns}
             dataSource={filteredData2.map((i) => {
-              const filteredData = processData(data)
+              const filtered = []
+              for (let i = 0; i < data.length; i++) {
+                const dueDate = dayjs(data[i].date)
+                if (
+                  dueDate.isBetween(dateFiltered, dateFiltered, 'day', '[]')
+                ) {
+                  filtered.push(data[i])
+                }
+              }
+
+              // 2. Xử lý dữ liệu
+              const filteredData = processData(filtered)
+
               // Để xử lý trường hợp đầu tư
               let processedData = [...filteredData]
               let investedData = filteredData.filter(
-                (i) => i.activityGroup === 'invest' && i.type === 'payable'
+                (i) =>
+                  i.activityGroup === 'invest' &&
+                  i.type === 'investing_receivable'
               )
-
               investedData.forEach((i) => {
                 processedData = processedData.map((item) => {
                   const { activityGroup, partner, subject, type } = item
                   if (
-                    type === 'receivable' &&
+                    type === 'investing' &&
                     activityGroup === 'invest' &&
                     partner === i.subject &&
                     subject === i.partner

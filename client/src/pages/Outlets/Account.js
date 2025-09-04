@@ -193,11 +193,35 @@ const Account = () => {
           text: 'Phải trả',
           value: 'payable',
         },
+        {
+          text: 'Đã đầu tư',
+          value: 'investing',
+        },
+        {
+          text: 'Phải thu đầu tư',
+          value: 'investing_receivable',
+        },
       ],
       onFilter: (value, record) => record.type === value,
       render: (type) => (
-        <Tag color={type === 'receivable' ? 'green' : 'volcano'}>
-          {type === 'receivable' ? 'Phải thu' : 'Phải trả'}
+        <Tag
+          color={
+            type === 'receivable'
+              ? 'green'
+              : type === 'payable'
+              ? 'volcano'
+              : type === 'investing'
+              ? 'gold'
+              : ''
+          }
+        >
+          {type === 'receivable'
+            ? 'Phải thu'
+            : type === 'payable'
+            ? 'Phải trả'
+            : type === 'investing'
+            ? 'Đã đầu tư'
+            : 'Phải thu đầu tư'}
         </Tag>
       ),
     },

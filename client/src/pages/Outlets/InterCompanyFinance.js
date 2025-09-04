@@ -343,8 +343,15 @@ const InterCompanyFinance = () => {
                 return false
               }
 
-              if (!['payable', 'receivable'].find((e) => e === i.type)) {
-                errorText += `Loại phải là "Phải trả" hoặc "Phải thu". Vui lòng kiểm tra lại.\n`
+              if (
+                ![
+                  'payable',
+                  'receivable',
+                  'investing',
+                  'investing_receivable',
+                ].find((e) => e === i.type)
+              ) {
+                errorText += `Loại phải là "Phải trả" hoặc "Phải thu" hoặc "Đã đầu tư" hoặc "Phải thu đầu tư". Vui lòng kiểm tra lại.\n`
                 return false
               }
 
@@ -468,18 +475,42 @@ const InterCompanyFinance = () => {
         fixed: 'right',
         filters: [
           {
-            value: 'payable',
-            text: 'Phải trả',
+            text: 'Phải thu',
+            value: 'receivable',
           },
           {
-            value: 'receivable',
-            text: 'Phải thu',
+            text: 'Phải trả',
+            value: 'payable',
+          },
+          {
+            text: 'Đã đầu tư',
+            value: 'investing',
+          },
+          {
+            text: 'Phải thu đầu tư',
+            value: 'investing_receivable',
           },
         ],
         onFilter: (value, record) => record.type === value,
-        render: (state) => (
-          <Tag color={state === 'payable' ? 'red' : 'green'}>
-            {state === 'payable' ? 'Phải trả' : 'Phải thu'}
+        render: (type) => (
+          <Tag
+            color={
+              type === 'receivable'
+                ? 'green'
+                : type === 'payable'
+                ? 'volcano'
+                : type === 'investing'
+                ? 'gold'
+                : ''
+            }
+          >
+            {type === 'receivable'
+              ? 'Phải thu'
+              : type === 'payable'
+              ? 'Phải trả'
+              : type === 'investing'
+              ? 'Đã đầu tư'
+              : 'Phải thu đầu tư'}
           </Tag>
         ),
       },

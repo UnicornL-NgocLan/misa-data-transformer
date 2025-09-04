@@ -184,25 +184,6 @@ const InterCompanyFinanceModal = ({
         <Space.Compact style={{ display: 'flex' }}>
           <Form.Item
             style={{ flex: 1 }}
-            name="type"
-            label="Loại"
-            rules={[{ required: true, message: 'Vui lòng chọn loại!' }]}
-          >
-            <Select
-              showSearch
-              filterOption={(input, option) =>
-                (option?.label ?? '')
-                  .toLowerCase()
-                  .includes(input.toLowerCase())
-              }
-              options={[
-                { value: 'payable', label: 'Phải trả' },
-                { value: 'receivable', label: 'Phải thu' },
-              ]}
-            />
-          </Form.Item>
-          <Form.Item
-            style={{ flex: 1 }}
             name="activityGroup"
             label="Nhóm hoạt động"
             rules={[
@@ -221,6 +202,27 @@ const InterCompanyFinanceModal = ({
                 { value: 'invest', label: 'Hoạt động đầu tư' },
                 { value: 'finance', label: 'Hoạt động tài chính' },
                 { value: 'others', label: 'Khác' },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item
+            style={{ flex: 1 }}
+            name="type"
+            label="Loại"
+            rules={[{ required: true, message: 'Vui lòng chọn loại!' }]}
+          >
+            <Select
+              showSearch
+              filterOption={(input, option) =>
+                (option?.label ?? '')
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
+              }
+              options={[
+                { value: 'payable', label: 'Phải trả' },
+                { value: 'receivable', label: 'Phải thu' },
+                { value: 'investing', label: 'Đã đầu tư' },
+                { value: 'investing_receivable', label: 'Phải thu đầu tư' },
               ]}
             />
           </Form.Item>

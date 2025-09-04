@@ -1,19 +1,34 @@
 const processData = (raw) => {
   const convertedtoPayableList = raw.map(
     ({ subject, partner, balance, type, activityGroup }) =>
-      type === 'payable'
+      type === 'payable' || type === 'receivable'
+        ? type === 'payable'
+          ? {
+              borrower: subject,
+              lender: partner,
+              amount: balance,
+              activityGroup,
+            }
+          : {
+              borrower: partner,
+              lender: subject,
+              amount: balance,
+              activityGroup,
+            }
+        : type === 'investing_receivable'
         ? {
-            borrower: subject,
-            lender: partner,
-            amount: balance,
-            activityGroup,
-          }
-        : {
             borrower: partner,
             lender: subject,
             amount: balance,
             activityGroup,
           }
+        : {
+            borrower: subject,
+            lender: partner,
+            amount: balance,
+            activityGroup,
+          }
+    // Cái ở dưới dành cho trường hợp phải thu đầu tư
   )
 
   const filteredDuplicatedList = []
@@ -137,7 +152,8 @@ export function calculateTotalDebts(debts) {
 }
 
 export const handleNetOffByGroup = (raw) => {
-  const dataProcessed = processData(raw)
+  const removedInvestingData = raw.filter((item) => item.type !== 'investing')
+  const dataProcessed = processData(removedInvestingData)
   return netDebtsByGroup(dataProcessed)
 }
 

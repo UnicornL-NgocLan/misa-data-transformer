@@ -64,22 +64,39 @@ const InterCompanyFinanceDiffList = () => {
     processed.forEach((entry) => {
       const { subject, partner, balance, type, activityGroup } = entry
       const counterpartKey = `${partner}|${subject}|${activityGroup}|${
-        type === 'payable' ? 'receivable' : 'payable'
+        type === 'payable' || type === 'receivable'
+          ? type === 'payable'
+            ? 'receivable'
+            : 'payable'
+          : type === 'investing'
+          ? 'investing_receivable'
+          : 'investing'
       }`
       const currentKey = `${subject}|${partner}|${activityGroup}|${type}`
       if (used.has(currentKey) || used.has(counterpartKey)) return
-      const counterpart = processed.find(
-        (e) =>
+      const counterpart = processed.find((e) => {
+        let counterPartType = ''
+        if (type === 'receivable') {
+          counterPartType = 'payable'
+        } else if (type === 'investing') {
+          counterPartType = 'investing_receivable'
+        } else if (type === 'payable') {
+          counterPartType = 'receivable'
+        } else if (type === 'investing_receivable') {
+          counterPartType = 'investing'
+        }
+        return (
           e.subject === partner &&
           e.partner === subject &&
           e.activityGroup === activityGroup &&
-          e.type !== type
-      )
+          e.type === counterPartType
+        )
+      })
       if (!counterpart) {
         if (activityGroup === 'invest') {
           // Lấy công ty nhận tiền đầu tư
           const companyInvested = companies.find((company) =>
-            type === 'receivable'
+            type === 'investing_receivable'
               ? company.shortname === subject
               : company.shortname === partner
           )
@@ -137,7 +154,7 @@ const InterCompanyFinanceDiffList = () => {
         if (activityGroup === 'invest') {
           // Lấy công ty nhận tiền đầu tư
           const companyInvested = companies.find((company) =>
-            type === 'receivable'
+            type === 'investing_receivable'
               ? company.shortname === subject
               : company.shortname === partner
           )
@@ -198,7 +215,7 @@ const InterCompanyFinanceDiffList = () => {
         if (activityGroup === 'invest') {
           // Lấy công ty nhận tiền đầu tư
           const companyInvested = companies.find((company) =>
-            type === 'receivable'
+            type === 'investing_receivable'
               ? company.shortname === subject
               : company.shortname === partner
           )

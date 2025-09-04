@@ -123,9 +123,11 @@ const UploadMisaDebtModal = ({
         }
 
         if (
-          !['payable', 'receivable'].find((e) => e === respectiveAccount.type)
+          !['payable', 'receivable', 'investing', 'investing_receivable'].find(
+            (e) => e === respectiveAccount.type
+          )
         ) {
-          errorText += `Loại phải là "Phải trả" hoặc "Phải thu". Vui lòng kiểm tra lại tại dòng thứ ${
+          errorText += `Loại phải là "Phải trả" hoặc "Phải thu" hoặc "Đã đầu tư" hoặc "Phải thu đầu tư". Vui lòng kiểm tra lại tại dòng thứ ${
             index + 1
           }.\n`
           return false

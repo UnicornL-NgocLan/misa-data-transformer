@@ -102,6 +102,8 @@ const AccountCreateModal = ({
             options={[
               { value: 'payable', label: 'Phải trả' },
               { value: 'receivable', label: 'Phải thu' },
+              { value: 'investing', label: 'Đã đầu tư' },
+              { value: 'investing_receivable', label: 'Phải thu đầu tư' },
             ]}
           />
         </Form.Item>

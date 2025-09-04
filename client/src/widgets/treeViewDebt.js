@@ -23,7 +23,7 @@ const TreeViewDebt = ({ raw }) => {
   const MAX_NODE_LEVEL = 5
 
   // --------------------- Process raw data ---------------------
-  const processData = useCallback((raw) => {
+  const processData = (raw) => {
     const processedMap = new Map()
     const dateCache = new Map()
 
@@ -38,7 +38,6 @@ const TreeViewDebt = ({ raw }) => {
       const subjectId = item.subjectCompanyId?._id || ''
       const counterpartId = item.counterpartCompanyId?._id || ''
       const key = `${subjectId}_${counterpartId}_${item.type}_${item.activityGroup}_${dateKey}`
-
       if (processedMap.has(key)) {
         processedMap.get(key).balance += item.debit - item.credit
       } else {
@@ -54,7 +53,7 @@ const TreeViewDebt = ({ raw }) => {
     }
 
     dateCache.clear()
-    return Array.from(processedMap.values()).map((item) => ({
+    const finalResult = Array.from(processedMap.values()).map((item) => ({
       date: item.date,
       subject: item.subjectCompanyId?.shortname || item.subjectCompanyId?.name,
       partner:
@@ -63,8 +62,8 @@ const TreeViewDebt = ({ raw }) => {
       type: item.type,
       activityGroup: item.activityGroup,
     }))
-  }, [])
-
+    return finalResult
+  }
   // --------------------- Build tree ---------------------
   const buildDebtTree = useCallback(
     (data, rootCompany, collapsedNodesParam) => {
@@ -152,16 +151,21 @@ const TreeViewDebt = ({ raw }) => {
         dayjs(r.date).isBetween(startDay, endDay, 'day', '[]')
       )
 
-      let processedData = processData(filtered)
-
+      const removedInvestingData = filtered.filter(
+        (item) => item.type !== 'investing'
+      )
+      let processedData = processData(removedInvestingData)
       // Index invest-payable
       const investPayableMap = new Map()
       for (let row of processedData) {
-        if (row.activityGroup === 'invest' && row.type === 'payable')
+        if (row.activityGroup === 'invest' && row.type === 'investing')
           investPayableMap.set(`${row.partner}_${row.subject}`, row.balance)
       }
       for (let row of processedData) {
-        if (row.activityGroup === 'invest' && row.type === 'receivable') {
+        if (
+          row.activityGroup === 'invest' &&
+          row.type === 'investing_receivable'
+        ) {
           const key = `${row.subject}_${row.partner}`
           if (investPayableMap.has(key)) row.balance = investPayableMap.get(key)
         }
