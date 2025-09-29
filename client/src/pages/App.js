@@ -8,6 +8,7 @@ import { PoweroffOutlined, LockOutlined } from '@ant-design/icons'
 import { FaCaretDown } from 'react-icons/fa'
 import { FaHandshakeSimple } from 'react-icons/fa6'
 import app from '../axiosConfig'
+import { FaFolderOpen } from 'react-icons/fa6'
 import ChangePasswordModal from '../widgets/changePasswordModal'
 import { GrTransaction } from 'react-icons/gr'
 import { Outlet, useNavigate } from 'react-router'
@@ -56,6 +57,7 @@ const App = () => {
     setChartelCapitalTransactionsState,
     setAccountState,
     setMoneyFlowReasonState,
+    setDocumentSetState,
   } = useZustand()
   const [loading, setLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -181,6 +183,15 @@ const App = () => {
       },
     },
     {
+      key: 7.3,
+      icon: <FaFolderOpen />,
+      label: 'Bộ tài liệu',
+      disabled: !checkRights('document', ['read']),
+      onClick: () => {
+        handleNavigate('/document-set', 7.3)
+      },
+    },
+    {
       key: 7.5,
       icon: <FaTools />,
       label: 'Tiện ích',
@@ -241,6 +252,7 @@ const App = () => {
         app.get('/api/get-chartel-capital-transactions'),
         app.get('/api/get-accounts'),
         app.get('/api/get-money-flow-reasons'),
+        app.get('/api/get-document-sets'),
       ])
 
       setUserState(result[0]?.data?.data)
@@ -259,6 +271,7 @@ const App = () => {
       setChartelCapitalTransactionsState(result[13]?.data?.data)
       setAccountState(result[14]?.data?.data)
       setMoneyFlowReasonState(result[15]?.data?.data)
+      setDocumentSetState(result[16]?.data?.data)
     } catch (error) {
       alert(error?.response?.data?.msg || error)
     } finally {

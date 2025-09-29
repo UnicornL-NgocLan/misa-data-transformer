@@ -75,6 +75,18 @@ router.post(
   checkRights('moneyFlowReason', ['create']),
   dataCtrl.createMoneyFlowReason
 )
+router.post(
+  '/create-document-set',
+  authenticate,
+  checkRights('document', ['create']),
+  dataCtrl.createDocumentSet
+)
+router.post(
+  '/create-document',
+  authenticate,
+  checkRights('document', ['create']),
+  dataCtrl.createDocument
+)
 
 router.patch(
   '/update-bank/:id',
@@ -148,6 +160,18 @@ router.patch(
   checkRights('moneyFlowReason', ['write']),
   dataCtrl.updateMoneyFlowReason
 )
+router.patch(
+  '/update-document-set/:id',
+  authenticate,
+  checkRights('document', ['write']),
+  dataCtrl.updateDocumentSet
+)
+router.patch(
+  '/update-document/:id',
+  authenticate,
+  checkRights('document', ['write']),
+  dataCtrl.updateDocument
+)
 
 router.get('/get-companies', authenticate, dataCtrl.getCompanies)
 router.get('/get-banks', authenticate, dataCtrl.getBanks)
@@ -173,6 +197,8 @@ router.get(
   authenticate,
   dataCtrl.getMoneyFlowReasons
 )
+router.get('/get-document-sets', authenticate, dataCtrl.getDocumentSets)
+router.get('/get-documents/:id', authenticate, dataCtrl.getDocuments)
 
 router.delete(
   '/delete-source/:id',
@@ -221,6 +247,18 @@ router.delete(
   authenticate,
   checkRights('moneyFlowReason', ['canDelete']),
   dataCtrl.deleteMoneyFlowReason
+)
+router.delete(
+  '/delete-document-set/:id',
+  authenticate,
+  checkRights('document', ['canDelete']),
+  dataCtrl.deleteDocumentSet
+)
+router.delete(
+  '/delete-document/:id',
+  authenticate,
+  checkRights('document', ['canDelete']),
+  dataCtrl.deleteDocument
 )
 
 module.exports = router

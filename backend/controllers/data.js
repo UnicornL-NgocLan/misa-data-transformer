@@ -10,7 +10,10 @@ const CompanyTypes = require('../models/companyType')
 const ChartelCapitalTransactions = require('../models/chartelCapitalTransaction')
 const Accounts = require('../models/account')
 const MoneyFlowReasons = require('../models/moneyFlowReason')
+const DocumentSets = require('../models/documentSet')
+const Documents = require('../models/document')
 const moment = require('moment-timezone')
+const { get } = require('mongoose')
 
 const dataCtrl = {
   createCompany: async (req, res) => {
@@ -1070,6 +1073,173 @@ const dataCtrl = {
         }
       )
       res.status(200).json({ msg: 'Đã xóa thành công' })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+  createDocumentSet: async (req, res) => {
+    try {
+      const { name, description, company_id } = req.body
+      if (!name)
+        return res
+          .status(400)
+          .json({ msg: 'Vui lòng cung cấp đầy đủ thông tin' })
+
+      const newDocumentSet = await DocumentSets.create({
+        name,
+        description,
+        company_id,
+        created_by: req.user._id,
+      })
+
+      res
+        .status(200)
+        .json({ msg: 'Đã tạo hoàn tất bộ tài liệu', data: newDocumentSet })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  updateDocumentSet: async (req, res) => {
+    try {
+      let parameters = { ...req.body }
+      const { id } = req.params
+
+      const existingRecord = await DocumentSets.findOne({
+        _id: id,
+      })
+
+      if (!existingRecord)
+        return res.status(400).json({ msg: 'Không tìm thấy bộ tài liệu này' })
+      if (existingRecord?.is_locked)
+        return res
+          .status(400)
+          .json({ msg: 'Bộ tài liệu đã được khóa, không thể chỉnh sửa' })
+
+      if (existingRecord.created_by.toString() !== req.user._id.toString())
+        return res.status(400).json({
+          msg: 'Bạn không có quyền chỉnh sửa bộ tài liệu này do không phải là người tạo',
+        })
+      const newOne = await DocumentSets.findOneAndUpdate(
+        { _id: id },
+        { ...parameters },
+        { new: true }
+      )
+      if (!newOne)
+        return res
+          .status(400)
+          .json({ msg: 'Bộ tài liệu không có trong cơ sở dữ liệu' })
+      res.status(200).json({ msg: 'Đã cập nhật thành công', data: newOne })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  getDocumentSets: async (req, res) => {
+    try {
+      const documentSets = await DocumentSets.find({}).populate(
+        'created_by company_id'
+      )
+      res.status(200).json({ data: documentSets })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  deleteDocumentSet: async (req, res) => {
+    try {
+      const { id } = req.params
+      const existingRecord = await DocumentSets.findOne({
+        _id: id,
+      })
+      if (!existingRecord)
+        return res.status(400).json({ msg: 'Không tìm thấy bộ tài liệu này' })
+
+      if (existingRecord.created_by.toString() !== req.user._id.toString())
+        return res.status(400).json({
+          msg: 'Bạn không có quyền xóa bộ tài liệu này do không phải là người tạo',
+        })
+
+      await DocumentSets.findOneAndDelete({ _id: id })
+
+      await Documents.deleteMany({
+        set_id: id,
+      })
+      res.status(200).json({ msg: 'Đã xóa thành công' })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  createDocument: async (req, res) => {
+    try {
+      const {
+        invoice_number,
+        invoice_date,
+        tax_code,
+        set_id,
+        file,
+        name,
+        type,
+      } = req.body
+
+      await Documents.create({
+        invoice_number,
+        invoice_date,
+        tax_code,
+        set_id,
+        file,
+        name,
+        type,
+      })
+
+      res.status(200).json({ msg: 'Đã tạo hoàn tất tài liệu' })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  updateDocument: async (req, res) => {
+    try {
+      let parameters = { ...req.body }
+      const { id } = req.params
+      Object.keys(parameters).forEach((key) => {
+        if (parameters[key] === null) {
+          delete parameters[key]
+        }
+      })
+
+      const newOne = await Documents.findOneAndUpdate(
+        { _id: id },
+        { ...parameters },
+        { new: true }
+      )
+      if (!newOne)
+        return res
+          .status(400)
+          .json({ msg: 'Tài liệu không có trong cơ sở dữ liệu' })
+      res.status(200).json({ msg: 'Đã cập nhật thành công' })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  deleteDocument: async (req, res) => {
+    try {
+      const { id } = req.params
+      await Documents.findOneAndDelete({ _id: id })
+      res.status(200).json({ msg: 'Đã xóa thành công' })
+    } catch (error) {
+      res.status(500).json({ msg: error.message })
+    }
+  },
+
+  getDocuments: async (req, res) => {
+    try {
+      const documents = await Documents.find({
+        set_id: req.params.id,
+      }).populate('set_id', 'name')
+      res.status(200).json({ data: documents })
     } catch (error) {
       res.status(500).json({ msg: error.message })
     }

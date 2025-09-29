@@ -212,4 +212,5 @@ export const objectMapping = {
   chartelCapital: 'Vốn điều lệ',
   account: 'Tài khoản kế toán',
   moneyFlowReason: 'Mục đích dòng tiền',
+  document: 'Bộ tài liệu',
 }
