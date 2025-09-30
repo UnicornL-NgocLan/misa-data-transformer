@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Modal } from 'antd'
 import { Form, Input } from 'antd'
 import app from '../axiosConfig'
-import { Select, Space, Tooltip } from 'antd'
+import { Select, Space, Tooltip, DatePicker } from 'antd'
 import { useZustand } from '../zustand'
 import { UploadOutlined } from '@ant-design/icons'
 import { Button, Upload, Table } from 'antd'
@@ -13,7 +13,15 @@ import useCheckRights from '../utils/checkRights'
 import enImg from '../images/en.png'
 import { FaLock } from 'react-icons/fa'
 import JSZip from 'jszip'
+import dayjs from 'dayjs'
+import customParseFormat from 'dayjs/plugin/customParseFormat'
+import isBetween from 'dayjs/plugin/isBetween'
 import { saveAs } from 'file-saver'
+import Highlighter from 'react-highlight-words'
+import { SearchOutlined } from '@ant-design/icons'
+const { RangePicker } = DatePicker
+dayjs.extend(customParseFormat)
+dayjs.extend(isBetween)
 
 const DocumentSetCreateModal = ({
   isModalOpen,
@@ -27,6 +35,11 @@ const DocumentSetCreateModal = ({
   const [documents, setDocuments] = useState([])
   const checkRights = useCheckRights()
   const [isFetching, setIsFetching] = useState(false)
+  const [searchText, setSearchText] = useState('')
+  const [searchedColumn, setSearchedColumn] = useState('')
+  const [filteredData, setFilteredData] = useState([])
+  const [isFilteredDate, setIsFilteredDate] = useState(false)
+  const searchInput = useRef(null)
 
   const handleOk = async () => {
     try {
@@ -73,6 +86,122 @@ const DocumentSetCreateModal = ({
       setLoading(false)
     }
   }
+
+  const handleSearch = (selectedKeys, confirm, dataIndex) => {
+    confirm()
+    setSearchText(selectedKeys[0])
+    setSearchedColumn(dataIndex)
+  }
+
+  const handleReset = (clearFilters) => {
+    clearFilters()
+    setSearchText('')
+  }
+
+  const getColumnSearchProps = (dataIndex) => ({
+    filterDropdown: ({
+      setSelectedKeys,
+      selectedKeys,
+      confirm,
+      clearFilters,
+      close,
+    }) => (
+      <div
+        style={{
+          padding: 8,
+        }}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
+        <Input
+          ref={searchInput}
+          value={selectedKeys[0]}
+          onChange={(e) =>
+            setSelectedKeys(e.target.value ? [e.target.value] : [])
+          }
+          onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
+          style={{
+            marginBottom: 8,
+            display: 'block',
+          }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{
+              width: 90,
+            }}
+          >
+            Tìm kiếm
+          </Button>
+          <Button
+            onClick={() => clearFilters && handleReset(clearFilters)}
+            size="small"
+            style={{
+              width: 90,
+            }}
+          >
+            Reset
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              confirm({
+                closeDropdown: false,
+              })
+              setSearchText(selectedKeys[0])
+              setSearchedColumn(dataIndex)
+            }}
+          >
+            OK
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              close()
+            }}
+          >
+            Đóng
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered) => (
+      <SearchOutlined
+        style={{
+          color: filtered ? '#1677ff' : undefined,
+        }}
+      />
+    ),
+    onFilter: (value, record) =>
+      record[dataIndex]
+        ?.toString()
+        ?.toLowerCase()
+        ?.includes(value?.toLowerCase()),
+    onFilterDropdownOpenChange: (visible) => {
+      if (visible) {
+        setTimeout(() => searchInput.current?.select(), 100)
+      }
+    },
+    render: (text) =>
+      searchedColumn === dataIndex ? (
+        <Highlighter
+          highlightStyle={{
+            backgroundColor: '#ffc069',
+            padding: 0,
+          }}
+          searchWords={[searchText]}
+          autoEscape
+          textToHighlight={text ? text.toString() : ''}
+        />
+      ) : (
+        text
+      ),
+  })
 
   const handleLockDocumentSet = async () => {
     try {
@@ -210,6 +339,25 @@ const DocumentSetCreateModal = ({
     saveAs(content, `${isModalOpen?.name || 'documents'}.zip`)
   }
 
+  const handleDateFilter = (dates) => {
+    if (!dates || dates.length === 0) {
+      setFilteredData(documents)
+      setIsFilteredDate(false)
+    } else {
+      const [start, end] = dates
+      const filtered = documents.filter((item) => {
+        const startDay = dayjs(start, 'DD/MM/YYYY')
+        const endDay = dayjs(end, 'DD/MM/YYYY')
+        const dueDateFormat = dayjs(item.invoice_date)
+        return dueDateFormat.isBetween(startDay, endDay, 'day', '[]')
+      })
+      setFilteredData(filtered)
+      setIsFilteredDate(true)
+    }
+  }
+
+  const getFilteredDocuments = () => (isFilteredDate ? filteredData : documents)
+
   useEffect(() => {
     if (isModalOpen?._id) {
       form.setFieldValue('name', isModalOpen?.name)
@@ -229,22 +377,31 @@ const DocumentSetCreateModal = ({
       title: 'Tên file',
       dataIndex: 'name',
       key: 'name',
+      ...getColumnSearchProps('name'),
     },
     {
       title: 'Ngày hóa đơn',
       dataIndex: 'invoice_date',
       key: 'invoice_date',
+      filterDropdown: () => (
+        <div style={{ padding: 8 }}>
+          <RangePicker onChange={handleDateFilter} />
+        </div>
+      ),
+      onFilter: () => {},
       render: (text) => moment(text).format('DD/MM/YYYY'),
     },
     {
       title: 'Số hóa đơn',
       dataIndex: 'invoice_number',
       key: 'invoice_number',
+      ...getColumnSearchProps('invoice_number'),
     },
     {
       title: 'Mã số thuế',
       dataIndex: 'tax_code',
       key: 'tax_code',
+      ...getColumnSearchProps('tax_code'),
     },
     {
       title: 'Hành động',
@@ -289,7 +446,7 @@ const DocumentSetCreateModal = ({
       title={isModalOpen?._id ? 'Cập nhật bộ tài liệu' : 'Tạo bộ tài liệu mới'}
       open={isModalOpen}
       onOk={handleOk}
-      width={700}
+      width={900}
       onCancel={handleClose}
     >
       <Form
@@ -412,7 +569,7 @@ const DocumentSetCreateModal = ({
       ) : (
         <Table
           columns={columns}
-          dataSource={documents.map((i) => {
+          dataSource={getFilteredDocuments().map((i) => {
             return { ...i, key: i._id }
           })}
           bordered
