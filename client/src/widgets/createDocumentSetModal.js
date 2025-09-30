@@ -12,6 +12,8 @@ import { FaDownload } from 'react-icons/fa'
 import useCheckRights from '../utils/checkRights'
 import enImg from '../images/en.png'
 import { FaLock } from 'react-icons/fa'
+import JSZip from 'jszip'
+import { saveAs } from 'file-saver'
 
 const DocumentSetCreateModal = ({
   isModalOpen,
@@ -190,6 +192,24 @@ const DocumentSetCreateModal = ({
     window.URL.revokeObjectURL(url)
   }
 
+  const handleDownloadZip = async () => {
+    const zip = new JSZip()
+
+    documents.forEach((file) => {
+      // Nếu file.buffer là ArrayBuffer
+      const uint8 =
+        file.file.data instanceof ArrayBuffer
+          ? new Uint8Array(file.file.data)
+          : file.file.data
+
+      // Thêm thẳng vào zip
+      zip.file(file.name, uint8)
+    })
+
+    const content = await zip.generateAsync({ type: 'blob' })
+    saveAs(content, `${isModalOpen?.name || 'documents'}.zip`)
+  }
+
   useEffect(() => {
     if (isModalOpen?._id) {
       form.setFieldValue('name', isModalOpen?.name)
@@ -334,18 +354,47 @@ const DocumentSetCreateModal = ({
             <Upload {...props} multiple>
               <Button icon={<UploadOutlined />}>Chọn file</Button>
             </Upload>
-            {isModalOpen?._id && !isModalOpen?.is_locked && (
-              <Button
-                color="danger"
-                variant="solid"
-                icon={<FaLock />}
-                onClick={handleLockDocumentSet}
-              >
-                Khóa bộ tài liệu
-              </Button>
-            )}
+            <Space>
+              {documents.length > 0 && (
+                <Button
+                  icon={<FaDownload />}
+                  color="primary"
+                  variant="solid"
+                  onClick={handleDownloadZip}
+                >
+                  Tải bộ tài liệu
+                </Button>
+              )}
+              {isModalOpen?._id && !isModalOpen?.is_locked && (
+                <Button
+                  color="danger"
+                  variant="solid"
+                  icon={<FaLock />}
+                  onClick={handleLockDocumentSet}
+                >
+                  Khóa bộ tài liệu
+                </Button>
+              )}
+            </Space>
           </div>
         )}
+      {isModalOpen?._id && isModalOpen?.is_locked && (
+        <div
+          style={{
+            margin: '16px 0',
+            textAlign: 'right',
+          }}
+        >
+          <Button
+            color="primary"
+            variant="solid"
+            icon={<FaDownload />}
+            onClick={handleDownloadZip}
+          >
+            Tải bộ tài liệu
+          </Button>
+        </div>
+      )}
       {isFetching ? (
         <div
           className="loading"
