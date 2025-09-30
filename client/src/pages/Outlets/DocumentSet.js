@@ -250,18 +250,19 @@ const DocumentSet = () => {
               onClick={() => showModal(_)}
             ></Button>
           </Tooltip>
-          {checkRights('document', ['canDelete']) &&
-            _?.created_by?._id === auth?._id && (
-              <Tooltip title="Xóa">
-                <Button
-                  color="danger"
-                  size="small"
-                  variant="filled"
-                  icon={<MdDelete />}
-                  onClick={() => handleDeleteRecord(_)}
-                ></Button>
-              </Tooltip>
-            )}
+          {(auth.role === 'admin' ||
+            (checkRights('document', ['canDelete']) &&
+              _?.created_by?._id === auth?._id)) && (
+            <Tooltip title="Xóa">
+              <Button
+                color="danger"
+                size="small"
+                variant="filled"
+                icon={<MdDelete />}
+                onClick={() => handleDeleteRecord(_)}
+              ></Button>
+            </Tooltip>
+          )}
         </Space>
       ),
     },

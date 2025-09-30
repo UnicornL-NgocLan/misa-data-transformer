@@ -1116,13 +1116,9 @@ const dataCtrl = {
           .status(400)
           .json({ msg: 'Bộ tài liệu đã được khóa, không thể chỉnh sửa' })
 
-      if (existingRecord.created_by.toString() !== req.user._id.toString())
-        return res.status(400).json({
-          msg: 'Bạn không có quyền chỉnh sửa bộ tài liệu này do không phải là người tạo',
-        })
       const newOne = await DocumentSets.findOneAndUpdate(
         { _id: id },
-        { ...parameters },
+        { ...parameters, updated_by: req.user._id },
         { new: true }
       )
       if (!newOne)
@@ -1191,6 +1187,7 @@ const dataCtrl = {
         file,
         name,
         type,
+        created_by: req.user._id,
       })
 
       res.status(200).json({ msg: 'Đã tạo hoàn tất tài liệu' })
@@ -1238,7 +1235,7 @@ const dataCtrl = {
     try {
       const documents = await Documents.find({
         set_id: req.params.id,
-      }).populate('set_id', 'name')
+      }).populate('set_id created_by', 'name')
       res.status(200).json({ data: documents })
     } catch (error) {
       res.status(500).json({ msg: error.message })

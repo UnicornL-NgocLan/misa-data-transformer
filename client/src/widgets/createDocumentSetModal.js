@@ -251,10 +251,10 @@ const DocumentSetCreateModal = ({
       setFileList(newFileList)
     },
     beforeUpload: async (file) => {
-      const isLt2M = file.size / 1024 / 1024 < 2 // check size in MB
+      const isLt2M = file.size / 1024 / 1024 < 2
       if (!isLt2M) {
         alert('Dung lượng file phải nhỏ hơn 2MB!')
-        return Upload.LIST_IGNORE // prevents file from being added to list
+        return Upload.LIST_IGNORE
       } else {
         const listItem = file.name.split('.')
         const invoiceDateString = listItem[0]
@@ -270,17 +270,19 @@ const DocumentSetCreateModal = ({
         const month = invoiceDateString.substring(2, 4)
         const year = invoiceDateString.substring(4, 8)
 
-        // JS Date: new Date(year, monthIndex, day)
-        // Lưu ý: monthIndex = 0 (Jan) -> 11 (Dec)
         const date = new Date(year, month - 1, day)
         file.invoice_date = date
         file.invoice_number = invoiceNumber
         file.tax_code = taxCode
+
         const arrayBuffer = await file.arrayBuffer()
         const buffer = Array.from(new Uint8Array(arrayBuffer))
         file.buffer = buffer
-        setFileList([...fileList, file])
-        return false
+
+        // ✅ FIX: use functional update to avoid stale state
+        setFileList((prev) => [...prev, file])
+
+        return false // prevent auto upload but keep file in list
       }
     },
     fileList,
@@ -404,6 +406,18 @@ const DocumentSetCreateModal = ({
       ...getColumnSearchProps('tax_code'),
     },
     {
+      title: 'Người upload',
+      dataIndex: 'created',
+      key: 'created',
+      ...getColumnSearchProps('created'),
+    },
+    {
+      title: 'Ngày upload',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      render: (text) => moment(text).format('DD/MM/YYYY HH:mm:ss'),
+    },
+    {
       title: 'Hành động',
       align: 'center',
       key: 'action',
@@ -420,9 +434,7 @@ const DocumentSetCreateModal = ({
             ></Button>
           </Tooltip>
           {!isModalOpen?.is_locked &&
-            checkRights('document', ['canDelete']) &&
-            isModalOpen?.created_by &&
-            isModalOpen?.created_by?._id == auth._id && (
+            checkRights('document', ['canDelete']) && (
               <Tooltip title="Xóa">
                 <Button
                   color="danger"
@@ -446,19 +458,14 @@ const DocumentSetCreateModal = ({
       title={isModalOpen?._id ? 'Cập nhật bộ tài liệu' : 'Tạo bộ tài liệu mới'}
       open={isModalOpen}
       onOk={handleOk}
-      width={900}
+      width={1000}
       onCancel={handleClose}
     >
       <Form
         form={form}
         name="dynamic_ruleEdit"
         onFinish={handleOk}
-        disabled={
-          !checkRights('document', ['write']) ||
-          (isModalOpen?.created_by &&
-            isModalOpen?.created_by?._id !== auth._id) ||
-          isModalOpen?.is_locked
-        }
+        disabled={!checkRights('document', ['write']) || isModalOpen?.is_locked}
         layout="vertical"
       >
         <Space.Compact style={{ display: 'flex', width: '100%' }}>
@@ -494,35 +501,33 @@ const DocumentSetCreateModal = ({
           />
         </Form.Item>
       </Form>
-      {checkRights('document', ['create']) &&
-        ((isModalOpen?.created_by &&
-          isModalOpen?.created_by?._id === auth._id) ||
-          !isModalOpen?.created_by) &&
-        !isModalOpen?.is_locked && (
-          <div
-            style={{
-              margin: '16px 0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 8,
-            }}
-          >
-            <Upload {...props} multiple>
-              <Button icon={<UploadOutlined />}>Chọn file</Button>
-            </Upload>
-            <Space>
-              {documents.length > 0 && (
-                <Button
-                  icon={<FaDownload />}
-                  color="primary"
-                  variant="solid"
-                  onClick={handleDownloadZip}
-                >
-                  Tải bộ tài liệu
-                </Button>
-              )}
-              {isModalOpen?._id && !isModalOpen?.is_locked && (
+      {checkRights('document', ['create']) && !isModalOpen?.is_locked && (
+        <div
+          style={{
+            margin: '16px 0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+          }}
+        >
+          <Upload {...props} multiple>
+            <Button icon={<UploadOutlined />}>Chọn file</Button>
+          </Upload>
+          <Space>
+            {documents.length > 0 && (
+              <Button
+                icon={<FaDownload />}
+                color="primary"
+                variant="solid"
+                onClick={handleDownloadZip}
+              >
+                Tải bộ tài liệu
+              </Button>
+            )}
+            {isModalOpen?._id &&
+              !isModalOpen?.is_locked &&
+              isModalOpen?.created_by?._id == auth._id && (
                 <Button
                   color="danger"
                   variant="solid"
@@ -532,9 +537,9 @@ const DocumentSetCreateModal = ({
                   Khóa bộ tài liệu
                 </Button>
               )}
-            </Space>
-          </div>
-        )}
+          </Space>
+        </div>
+      )}
       {isModalOpen?._id && isModalOpen?.is_locked && (
         <div
           style={{
@@ -570,13 +575,13 @@ const DocumentSetCreateModal = ({
         <Table
           columns={columns}
           dataSource={getFilteredDocuments().map((i) => {
-            return { ...i, key: i._id }
+            return { ...i, key: i._id, created: i.created_by?.name }
           })}
           bordered
           size="small"
           rowKey={(record) => record._id}
           pagination={{
-            pageSize: 5,
+            pageSize: 4,
             simple: true,
             size: 'small',
             position: ['bottomRight'],

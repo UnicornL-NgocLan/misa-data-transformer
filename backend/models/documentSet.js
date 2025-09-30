@@ -14,6 +14,10 @@ const DocumentSetSchema = mongoose.Schema(
       required: true,
     },
     is_locked: { type: Boolean, default: false },
+    updated_by: {
+      type: mongoose.Types.ObjectId,
+      ref: 'User',
+    },
   },
   { timestamps: true }
 )

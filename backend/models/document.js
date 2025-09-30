@@ -9,6 +9,7 @@ const DocumentSchema = mongoose.Schema(
     file: { type: Buffer, required: true },
     type: String,
     name: String,
+    created_by: { type: mongoose.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
 )
