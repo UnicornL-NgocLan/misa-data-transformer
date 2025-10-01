@@ -484,7 +484,11 @@ const DocumentSetCreateModal = ({
         form={form}
         name="dynamic_ruleEdit"
         onFinish={handleOk}
-        disabled={!checkRights('document', ['write']) || isModalOpen?.is_locked}
+        disabled={
+          !checkRights('document', ['write']) ||
+          isModalOpen?.is_locked ||
+          (isModalOpen?._id && isModalOpen?.created_by?._id != auth._id)
+        }
         layout="vertical"
       >
         <Space.Compact style={{ display: 'flex', width: '100%' }}>
