@@ -44,23 +44,40 @@ const DocumentSetCreateModal = ({
   const handleOk = async () => {
     try {
       if (loading) return
-      const { name, company_id, description } = form.getFieldsValue()
-      if (!name?.trim()) return alert('Vui lòng nhập đầy đủ thông tin')
+      const { company_id, description, type } = form.getFieldsValue()
+      if (!company_id) {
+        alert('Vui lòng chọn công ty!')
+        return
+      }
+      if (!type) {
+        alert('Vui lòng chọn loại bộ tài liệu!')
+        return
+      }
 
+      if (type === 'origin') {
+        const listOfFiles = [...fileList, ...documents].map((i) => i.tax_code)
+        const uniqueFiles = [...new Set(listOfFiles)]
+        if (uniqueFiles.length > 1) {
+          alert(
+            'Mã số thuế của các file phải giống nhau mếu như loại bộ tài liệu là "Chứng từ gốc"!'
+          )
+          return
+        }
+      }
       setLoading(true)
 
       let setId = isModalOpen?._id || null
       if (isModalOpen?._id) {
         await app.patch(`/api/update-document-set/${isModalOpen?._id}`, {
-          name,
           company_id,
           description,
+          type,
         })
       } else {
         const { data } = await app.post('/api/create-document-set', {
-          name,
           company_id,
           description,
+          type,
         })
         setId = data.data._id
       }
@@ -338,7 +355,8 @@ const DocumentSetCreateModal = ({
     })
 
     const content = await zip.generateAsync({ type: 'blob' })
-    saveAs(content, `${isModalOpen?.name || 'documents'}.zip`)
+    const taxCodeOfFirstFile = documents[0]?.tax_code || 'MST'
+    saveAs(content, `${isModalOpen?.name}.${taxCodeOfFirstFile}.zip`)
   }
 
   const handleDateFilter = (dates) => {
@@ -365,6 +383,7 @@ const DocumentSetCreateModal = ({
       form.setFieldValue('name', isModalOpen?.name)
       form.setFieldValue('description', isModalOpen?.description)
       form.setFieldValue('company_id', isModalOpen?.company_id?._id)
+      form.setFieldValue('type', isModalOpen?.type)
     }
   }, [])
 
@@ -469,16 +488,32 @@ const DocumentSetCreateModal = ({
         layout="vertical"
       >
         <Space.Compact style={{ display: 'flex', width: '100%' }}>
-          <Form.Item
-            name="name"
-            style={{ flex: 2 }}
-            label="Tên bộ tài liệu"
-            rules={[{ required: true, message: 'Hãy nhập tên bộ tài liệu!' }]}
-          >
+          <Form.Item name="name" style={{ flex: 1 }} label="Tên bộ tài liệu">
+            <Input className="w-full" readOnly disabled />
+          </Form.Item>
+          <Form.Item name="description" label="Mô tả" style={{ flex: 1 }}>
             <Input className="w-full" placeholder="Bộ tài liệu ABC gì đó..." />
           </Form.Item>
-          <Form.Item name="description" label="Mô tả" style={{ flex: 3 }}>
-            <Input className="w-full" placeholder="Bộ tài liệu ABC gì đó..." />
+          <Form.Item
+            name="type"
+            label="Loại bộ tài liệu"
+            style={{ flex: 1 }}
+            rules={[
+              { required: true, message: 'Bộ tài liệu này thuộc loại nào!' },
+            ]}
+          >
+            <Select
+              showSearch
+              filterOption={(input, option) =>
+                (option?.label ?? '')
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
+              }
+              options={[
+                { value: 'origin', label: 'Chứng từ gốc' },
+                { value: 'document', label: 'Bộ chứng từ' },
+              ]}
+            />
           </Form.Item>
         </Space.Compact>
         <Form.Item

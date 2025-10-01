@@ -12,8 +12,8 @@ const Accounts = require('../models/account')
 const MoneyFlowReasons = require('../models/moneyFlowReason')
 const DocumentSets = require('../models/documentSet')
 const Documents = require('../models/document')
+const Sequences = require('../models/sequence')
 const moment = require('moment-timezone')
-const { get } = require('mongoose')
 
 const dataCtrl = {
   createCompany: async (req, res) => {
@@ -1079,17 +1079,44 @@ const dataCtrl = {
   },
   createDocumentSet: async (req, res) => {
     try {
-      const { name, description, company_id } = req.body
-      if (!name)
+      const { description, company_id, type } = req.body
+
+      if (!company_id)
         return res
           .status(400)
           .json({ msg: 'Vui lòng cung cấp đầy đủ thông tin' })
 
+      if (!type)
+        return res.status(400).json({ msg: 'Vui lòng chọn loại bộ tài liệu' })
+
+      const existingSequence = await Sequences.findOne({
+        name: 'document_set',
+      })
+
+      let mySequence = 1
+      let currentDate = moment().add(7, 'hours')
+      let year = currentDate.format('YY') // lấy 2 chữ số cuối của năm
+      let month = currentDate.format('MM')
+
+      if (!existingSequence) {
+        mySequence = await Sequences.create({
+          name: 'document_set',
+          current_number: 1,
+        })
+      } else {
+        mySequence = existingSequence.current_number + 1
+        await Sequences.findOneAndUpdate(
+          { _id: existingSequence._id },
+          { current_number: mySequence }
+        )
+      }
       const newDocumentSet = await DocumentSets.create({
-        name,
+        name: `${year}${month}${mySequence.toString().padStart(5, '0')}`,
         description,
         company_id,
+        type,
         created_by: req.user._id,
+        updated_by: req.user._id,
       })
 
       res

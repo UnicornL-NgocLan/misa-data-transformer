@@ -8,6 +8,7 @@ const DocumentSetSchema = mongoose.Schema(
       type: mongoose.Types.ObjectId,
       ref: 'User',
     },
+    type: String,
     company_id: {
       type: mongoose.Types.ObjectId,
       ref: 'Company',
