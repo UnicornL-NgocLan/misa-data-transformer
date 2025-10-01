@@ -7,7 +7,7 @@ const UserSchema = mongoose.Schema(
     name: String,
     companyIds: [{ type: mongoose.Types.ObjectId, ref: 'Company' }],
     active: { type: Boolean, default: true },
-    code: { type: String, unique: true },
+    code: { type: String },
     birthdate: Date,
     joiningDate: Date,
     resigningDate: Date,
