@@ -453,7 +453,8 @@ const DocumentSetCreateModal = ({
             ></Button>
           </Tooltip>
           {!isModalOpen?.is_locked &&
-            checkRights('document', ['canDelete']) && (
+            checkRights('document', ['canDelete']) &&
+            _?.created_by?._id === auth._id && (
               <Tooltip title="Xóa">
                 <Button
                   color="danger"
