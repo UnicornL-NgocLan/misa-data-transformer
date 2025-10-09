@@ -8,7 +8,7 @@ import { UploadOutlined } from '@ant-design/icons'
 import { Button, Upload, Table } from 'antd'
 import moment from 'moment'
 import { MdDelete } from 'react-icons/md'
-import { FaDownload } from 'react-icons/fa'
+import { FaDownload, FaEye } from 'react-icons/fa'
 import useCheckRights from '../utils/checkRights'
 import enImg from '../images/en.png'
 import { FaLock } from 'react-icons/fa'
@@ -19,6 +19,11 @@ import isBetween from 'dayjs/plugin/isBetween'
 import { saveAs } from 'file-saver'
 import Highlighter from 'react-highlight-words'
 import { SearchOutlined } from '@ant-design/icons'
+import Viewer, { Worker } from '@phuocng/react-pdf-viewer'
+
+import '@phuocng/react-pdf-viewer/cjs/react-pdf-viewer.css'
+
+// Create new plugin instance
 const { RangePicker } = DatePicker
 dayjs.extend(customParseFormat)
 dayjs.extend(isBetween)
@@ -40,6 +45,7 @@ const DocumentSetCreateModal = ({
   const [filteredData, setFilteredData] = useState([])
   const [isFilteredDate, setIsFilteredDate] = useState(false)
   const searchInput = useRef(null)
+  const [previewVisible, setPreviewVisible] = useState(false)
 
   const handleOk = async () => {
     try {
@@ -378,6 +384,11 @@ const DocumentSetCreateModal = ({
 
   const getFilteredDocuments = () => (isFilteredDate ? filteredData : documents)
 
+  const handlePreview = (buffer) => {
+    const byteArray = new Uint8Array(buffer)
+    setPreviewVisible(byteArray)
+  }
+
   useEffect(() => {
     if (isModalOpen?._id) {
       form.setFieldValue('name', isModalOpen?.name)
@@ -444,6 +455,16 @@ const DocumentSetCreateModal = ({
       hidden: !checkRights('document', ['read']),
       render: (_) => (
         <Space size="small">
+          {_.type === 'application/pdf' && (
+            <Tooltip title="Xem trước file pdf">
+              <Button
+                size="small"
+                variant="filled"
+                icon={<FaEye />}
+                onClick={() => handlePreview(_.file.data)}
+              ></Button>
+            </Tooltip>
+          )}
           <Tooltip title="Tải file">
             <Button
               size="small"
@@ -632,6 +653,23 @@ const DocumentSetCreateModal = ({
             ),
           }}
         />
+      )}
+      {previewVisible && (
+        <Modal
+          title="Xem trước file pdf"
+          open={previewVisible}
+          onCancel={() => setPreviewVisible(false)}
+          footer={null}
+          width="80%"
+          style={{ top: 20 }}
+          destroyOnClose
+        >
+          <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.min.js">
+            <div style={{ height: '750px' }}>
+              <Viewer fileUrl={previewVisible} />
+            </div>
+          </Worker>
+        </Modal>
       )}
     </Modal>
   )
